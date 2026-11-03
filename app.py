@@ -8,6 +8,7 @@ from flask import Flask, jsonify, render_template, request, send_from_directory
 from dotenv import load_dotenv
 from vision import analyze
 from llm import build_report, answer, provider_name
+from fun_reading import build_fun_reading
 
 load_dotenv()
 app=Flask(__name__, static_folder='dist', static_url_path='')
@@ -81,6 +82,20 @@ def chat_route():
                   for h in history[-8:] if isinstance(h,dict) and h.get('role') in {'user','assistant'}]
     return jsonify({'ok':True,**answer(message,item['features'],item['report'],safe_history)})
 
+@app.post('/api/fun-reading')
+def fun_reading_route():
+    expire_sessions()
+    data=request.get_json(silent=True)
+    if not isinstance(data,dict):return jsonify(error='Send a JSON object.'),400
+    sid=data.get('scan_id')
+    if not isinstance(sid,str) or sid not in CACHE:
+        return jsonify(error='Session expired. Analyze both palms again before creating a story.'),404
+    try:
+        story=build_fun_reading(CACHE[sid]['features'],data.get('theme','adventure'),data.get('choices',{}))
+        return jsonify(ok=True,story=story)
+    except (ValueError, TypeError):
+        return jsonify(error='Choose a valid theme and symbolic line choices.'),400
+
 @app.post('/api/session/clear')
 def clear_session():
     data=request.get_json(silent=True) or {}
@@ -99,3 +114,4 @@ def headers(resp):
 
 if __name__=='__main__':
     app.run(host='127.0.0.1',port=int(os.getenv('PORT','5000')),debug=False)
+
