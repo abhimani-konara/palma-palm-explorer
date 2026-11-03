@@ -1,7 +1,7 @@
 import sys,types,unittest,time
 from unittest.mock import patch
-sys.modules['vision']=types.SimpleNamespace(analyze=lambda *args:None)
-import app
+with patch.dict(sys.modules, {'vision':types.SimpleNamespace(analyze=lambda *args:None)}):
+ import app
 import fun_reading
 
 class FunReadingTests(unittest.TestCase):
@@ -14,6 +14,19 @@ class FunReadingTests(unittest.TestCase):
    r=self.client.post('/api/fun-reading',json={'scan_id':'test-scan','theme':'connection','choices':{'heart':'curved'}})
   self.assertEqual(r.status_code,200);s=r.json['story'];self.assertEqual(s['mode'],'local-story');self.assertEqual(len(s['chapters']),3)
   self.assertIn('not a factual prediction',s['notice']);self.assertIn('1 left-image and 0 right-image',s['basis']);self.assertEqual(s['choices']['head'],'unknown')
+ def test_full_reading_covers_requested_topics_and_no_marriage_age(self):
+  with patch('fun_reading.provider_name',return_value='demo'):
+   r=self.client.post('/api/fun-reading',json={'scan_id':'test-scan','theme':'full','choices':{}})
+  self.assertEqual(r.status_code,200)
+  cards=r.json['story']['chapters']
+  self.assertEqual([c['title'] for c in cards],['Love & relationships','Marriage & commitment','Career & ambitions','Future possibilities','Marriage age & timing'])
+  self.assertIn('No age, year, or timeline is calculated',cards[-1]['body'])
+ def test_each_focused_topic_produces_three_sections(self):
+  for theme in ['relationships','marriage','career','future']:
+   with patch('fun_reading.provider_name',return_value='demo'):
+    story=fun_reading.build_fun_reading(self.analysis,theme,{'heart':'curved'})
+   self.assertEqual(len(story['chapters']),3)
+   self.assertTrue(all(c['title'] and c['body'] for c in story['chapters']))
  def test_no_scan_and_expired_scan_cannot_generate(self):
   self.assertEqual(self.client.post('/api/fun-reading',json={'scan_id':'missing'}).status_code,404)
   app.CACHE['test-scan']['created']=0
