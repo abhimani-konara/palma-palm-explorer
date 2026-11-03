@@ -1,0 +1,106 @@
+[
+  {
+    "id": "heart",
+    "title": "Heart line symbolism",
+    "tags": [
+      "heart",
+      "love",
+      "relationships",
+      "emotions"
+    ],
+    "tradition": "Traditionally associated with emotion and connection. It cannot establish real feelings or relationship outcomes.",
+    "source": "PALMA project editorial knowledge note; not scientific predictive evidence"
+  },
+  {
+    "id": "head",
+    "title": "Head line symbolism",
+    "tags": [
+      "head",
+      "thought",
+      "intelligence",
+      "personality"
+    ],
+    "tradition": "Used as a symbol of thought and imagination; palm creases do not measure intelligence or mental health.",
+    "source": "PALMA project editorial knowledge note; not scientific predictive evidence"
+  },
+  {
+    "id": "life",
+    "title": "Life line symbolism",
+    "tags": [
+      "life",
+      "health",
+      "vitality",
+      "lifespan"
+    ],
+    "tradition": "Traditionally associated with vitality and life experience. Its length does not measure lifespan or diagnose health.",
+    "source": "PALMA project editorial knowledge note; not scientific predictive evidence"
+  },
+  {
+    "id": "fate",
+    "title": "Fate line symbolism",
+    "tags": [
+      "fate",
+      "career",
+      "work",
+      "direction",
+      "purpose"
+    ],
+    "tradition": "Sometimes symbolizes direction and purpose. It does not determine careers, wealth, or destiny.",
+    "source": "PALMA project editorial knowledge note; not scientific predictive evidence"
+  },
+  {
+    "id": "resources",
+    "title": "Prosperity symbolism",
+    "tags": [
+      "finance",
+      "money",
+      "wealth",
+      "prosperity"
+    ],
+    "tradition": "Prosperity is a cultural narrative theme. Palm features cannot establish finances or predict earnings.",
+    "source": "PALMA project editorial knowledge note; not scientific predictive evidence"
+  },
+  {
+    "id": "process",
+    "title": "Image processing",
+    "tags": [
+      "grayscale",
+      "gaussian",
+      "clahe",
+      "canny",
+      "edges",
+      "threshold",
+      "morphology",
+      "processing"
+    ],
+    "tradition": "OpenCV converts to grayscale, smooths with a Gaussian kernel, enhances local contrast with CLAHE, finds Canny edges, applies Otsu thresholding, and performs morphological closing. Edges and geometric segments are not validated palmistry lines.",
+    "source": "PALMA project editorial knowledge note; not scientific predictive evidence"
+  },
+  {
+    "id": "comparison",
+    "title": "Visual comparison",
+    "tags": [
+      "left",
+      "right",
+      "difference",
+      "compare"
+    ],
+    "tradition": "Compare brightness, contrast, sharpness and candidate counts as image measurements. Lighting and orientation can change these values; they do not establish personality differences.",
+    "source": "PALMA project editorial knowledge note; not scientific predictive evidence"
+  },
+  {
+    "id": "ethics",
+    "title": "Limits and privacy",
+    "tags": [
+      "privacy",
+      "future",
+      "prediction",
+      "ethics",
+      "health",
+      "death",
+      "lifespan"
+    ],
+    "tradition": "Palmistry is cultural entertainment, not a validated prediction method. This project does not establish health, lifespan, wealth, relationships or future outcomes. Raw images are processed without permanent storage; optional AI receives structured features and chat text only.",
+    "source": "PALMA project editorial knowledge note; not scientific predictive evidence"
+  }
+]
