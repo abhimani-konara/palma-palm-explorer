@@ -4,18 +4,60 @@ from llm import _invoke, provider_name
 from knowledge import retrieve, citation_set
 
 NOTICE = 'For fun only — inspired by traditional palmistry, not a factual prediction.'
-THEMES = {'adventure': ('The lantern-lit crossroads', 'curiosity and new experiences'),
-          'connection': ('The garden of little connections', 'friendship and kindness'),
-          'purpose': ('The maker’s next chapter', 'creativity and purpose')}
+THEMES = {
+    'full': ('Your symbolic palmistry reading', 'love, marriage, career, and future possibilities'),
+    'relationships': ('Love & relationships', 'love and relationships'),
+    'marriage': ('Marriage & commitment', 'marriage and commitment, without predicted ages or dates'),
+    'career': ('Career & ambitions', 'career symbolism and ambitions'),
+    'future': ('Future possibilities', 'open-ended future possibilities'),
+    'adventure': ('Adventure & possibilities', 'curiosity and new experiences'),
+    'connection': ('Love & relationships', 'love and relationships'),
+    'purpose': ('Career & ambitions', 'creativity and purpose')
+}
 SHAPES = {'unknown', 'curved', 'straight', 'not-visible'}
 KEYS = ('heart', 'head', 'life', 'fate')
 
 def validate_choices(theme, choices):
     if theme not in THEMES:
-        raise ValueError('Choose adventure, connection, or purpose.')
+        raise ValueError('Choose one of the available reading topics.')
     if not isinstance(choices, dict) or any(k not in KEYS or v not in SHAPES for k,v in choices.items()):
         raise ValueError('Invalid symbolic line choices.')
     return {key: choices.get(key, 'unknown') for key in KEYS}
+
+def reading_chapters(theme, choices):
+    heart = choices.get('heart', 'unknown')
+    heart_metaphor = (
+        'For this playful reading, your curved-symbol choice becomes a metaphor for warmth and openness.'
+        if heart == 'curved' else
+        'For this playful reading, your straight-symbol choice becomes a metaphor for steadiness and clear communication.'
+        if heart == 'straight' else
+        'No heart-line shape was selected, so this is general symbolism rather than an interpretation of an observed line.')
+    deck = {
+        'relationships': {'title': 'Love & relationships', 'body':
+            'The traditional heart-line theme invites a reflection on affection, trust, and emotional connection. '
+            + heart_metaphor + ' It does not establish your feelings or what another person will do.'},
+        'marriage': {'title': 'Marriage & commitment', 'body':
+            'In this for-fun reading, partnership is imagined as a shared path: companionship, mutual choice, and growing together. '
+            'No marriage or union line has been verified in your photographs. These themes do not establish whether you will marry or how a partnership will turn out.'},
+        'career': {'title': 'Career & ambitions', 'body':
+            'The head and fate symbols become a playful lens for curiosity, creative effort, and finding direction. '
+            'Imagine this as a chapter of exploring skills and possibilities. It is not a forecast of a job offer, income, promotion, or a career suited to your personality.'},
+        'future': {'title': 'Future possibilities', 'body':
+            'The symbolic horizon stays open: new interests, changing plans, and opportunities you might choose to explore. '
+            'Read it as a palmistry-inspired reflection on possibilities, not events that your hand says will happen.'},
+        'timing': {'title': 'Marriage age & timing', 'body':
+            'A palm photograph cannot establish a marriage age or date. No age, year, or timeline is calculated by this feature. '
+            'Timing remains open in this entertainment reading.'},
+        'symbols': {'title': 'Your symbolic reflection', 'body':
+            'Heart, head, life, and fate are used here as creative symbols for connection, imagination, experience, and direction. '
+            'Your optional manual choices guide the wording, but neither those choices nor the image candidates verify a prediction.'}
+    }
+    if theme == 'full':
+        keys = ['relationships', 'marriage', 'career', 'future', 'timing']
+    else:
+        topic = {'connection':'relationships','purpose':'career','adventure':'future'}.get(theme, theme)
+        keys = [topic, 'symbols', 'timing' if topic == 'marriage' else 'future' if topic != 'future' else 'relationships']
+    return [dict(deck[key]) for key in keys]
 
 def build_fun_reading(analysis, theme='adventure', choices=None):
     choices = validate_choices(theme, choices if choices is not None else {})
@@ -23,34 +65,29 @@ def build_fun_reading(analysis, theme='adventure', choices=None):
     counts = {side: len((analysis.get(side) or {}).get('features', [])) for side in ('left','right')}
     selected = [key for key, shape in choices.items() if shape in ('curved','straight')]
     kb = retrieve(' '.join(selected or ['heart','head','fate'])+' '+theme, k=4)
-    route = 'a winding garden path' if 'curved' in choices.values() else 'a lantern-lined avenue'
-    openers = {
-        'adventure': f'Imagine stepping onto {route}, with a small golden compass in your hand. In this invented chapter, an unfamiliar doorway is an invitation to explore a hobby, a place, or an idea simply for the joy of discovery.',
-        'connection': f'Picture {route} leading into a garden where every lantern carries a kind word. In this fictional chapter, a little conversation and a thoughtful gesture become the story’s brightest treasures.',
-        'purpose': f'Imagine {route} ending at a quiet workshop filled with unfinished sketches. In this invented chapter, you choose one small creative project and give it patient attention. The adventure is in making, learning, and trying again.'}
     result = {
         'mode': 'local-story', 'title': title, 'notice': NOTICE,
         'theme': theme, 'choices': choices,
-        'basis': f'Your photo session contains {counts["left"]} left-image and {counts["right"]} right-image candidate segments. They are not verified named palm lines. The story uses your chosen theme and optional manual symbols, not a forecast inferred from your images.',
-        'chapters': [
-            {'title': 'Your imagined next chapter', 'body': openers[theme]},
-            {'title': 'A symbol to carry', 'body': 'In palmistry folklore, the heart represents connection, the head imagination, and fate direction. Borrow these as story symbols: a warm conversation, an interesting question, and a path you are free to choose. They do not establish your personality or future.'},
-            {'title': 'A playful invitation', 'body': f'For a tiny real-world creative exercise, write one sentence about {mood}, or choose a harmless activity that fits the theme. Treat it as a story prompt, not advice from your palm.'}
-        ], 'sources': citation_set(kb)
+        'basis': f'Your photo session contains {counts["left"]} left-image and {counts["right"]} right-image candidate segments. They are not verified named palm lines. This entertainment reading uses your chosen topics and optional manual symbols, not a forecast inferred from your images.',
+        'chapters': reading_chapters(theme, choices), 'sources': citation_set(kb)
     }
     if provider_name() == 'demo':
         return result
     prompt = {'theme': mood, 'manual_storytelling_symbols': choices,
               'verified_named_palm_lines': [], 'image_candidate_counts': counts,
-              'curated_cultural_notes': kb}
+              'curated_cultural_notes': kb,
+              'required_section_titles': [c['title'] for c in result['chapters']]}
     system = (
-        'Write a magical, playful palmistry-inspired FICTIONAL story for an entertainment feature. '
-        'Begin each story in an imagined setting and use conditional or imaginative language. '
-        'Manual line choices are user-selected storytelling prompts, not verified observations. '
-        'Candidate image segments do not establish named palm lines. Do not claim to read the future '
-        'or infer personality, health, lifespan, wealth, relationships, or employment outcomes. '
-        'Do not give dates, guarantees, ominous warnings, diagnoses, or consequential advice. '
-        'Return JSON with title (string) and chapters (exactly 3 objects with string title and body). '
+        'Write a warm palmistry-style symbolic entertainment reading, rather than a scene-based fantasy story. '
+        'Its framing must remain FICTIONAL and for fun, not factual prediction. '
+        'Cover only the requested section topics, in the order of required_section_titles. '
+        'Discuss love, relationships, marriage/commitment, career symbolism, and future possibilities as relevant. '
+        'Manual line choices are storytelling prompts, not verified observations. '
+        'Never claim an unverified named line was detected or infer actual personality, health, lifespan, '
+        'wealth, relationship outcomes, or employment outcomes. '
+        'For marriage age and timing, explicitly say that no age or date can be inferred; never invent one. '
+        'Use conditional symbolic language, without guarantees, diagnoses, ominous warnings, or consequential advice. '
+        f'Return JSON with title (string) and chapters (exactly {len(result["chapters"])} objects with string title and body). '
         'Each body must be under 100 words. No markdown. '+NOTICE)
     try:
         raw = _invoke(system, json.dumps(prompt))
@@ -60,7 +97,7 @@ def build_fun_reading(analysis, theme='adventure', choices=None):
         chapters = parsed.get('chapters')
         if not isinstance(parsed.get('title'), str) or not 1 <= len(parsed['title']) <= 160:
             raise ValueError('Invalid title')
-        if not isinstance(chapters,list) or len(chapters)!=3:
+        if not isinstance(chapters,list) or len(chapters)!=len(result['chapters']):
             raise ValueError('Invalid chapters')
         if not all(isinstance(c,dict) and isinstance(c.get('title'),str) and 1<=len(c['title'])<=160
                    and isinstance(c.get('body'),str) and 1<=len(c['body'])<=1000 for c in chapters):
