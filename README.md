@@ -4,13 +4,31 @@ Designed & developed by **Abhimani Konara**. © 2026 Abhimani Konara. All rights
 
 A complete academic palm-image exploration application, built from the supplied group-project Python modules and the PALMA interface. The look combines a user-controlled fresco-to-cyber transition, jewel colors, a photographic palm, line hotspots, layered depth, a rotating/zoomable artwork, a heritage room, and decorative flying doves.
 
+## Open the website
+
+- **Hosted PALMA website:** [Open PALMA online](https://palma-sanctuary-abhi.dewmikonara22.chatgpt.site). This is a private site; sign in with the owner's authorized ChatGPT account.
+- **Local PALMA on your laptop:** [http://127.0.0.1:5001](http://127.0.0.1:5001), after starting the server with the Windows instructions below. Keep the server terminal open.
+- **GitHub repository:** [Source code](https://github.com/abhimani-konara/palma-palm-explorer). This link displays the code; it does not run the Flask application.
+
+A `127.0.0.1` address always refers to the device opening the link. It is not a public website address and cannot be used by someone else to access your laptop's server.
+
 ## Start on Windows
 
 1. Extract the ZIP fully. Do not run it from inside the ZIP preview.
 2. Install Python 3.11 or 3.12 and enable **Add Python to PATH**.
-3. Double-click `run_windows.bat`.
-4. When the terminal says it is running, open **http://127.0.0.1:5000**.
-5. Keep that terminal open while using the app. Press Ctrl+C to stop.
+3. Open the actual project folder containing `app.py`, `dist/`, and `run_windows.bat`. The extracted download may have an outer folder and an inner `PALMA_Full_Project` folder.
+4. Click File Explorer's address bar, type `cmd`, and press Enter.
+5. Run these commands one at a time:
+
+```bat
+set PORT=5001
+run_windows.bat
+```
+
+6. Wait for `Running on http://127.0.0.1:5001`, then open [http://127.0.0.1:5001](http://127.0.0.1:5001) in Chrome.
+7. Keep that terminal open while using the app. Press Ctrl+C to stop.
+
+These instructions select port **5001** so PALMA can run separately from LineLens on port 5000. The application's unchanged default is 5000 if no `PORT` is set. Open the exact address printed by the terminal.
 
 The first setup installs packages and needs an internet connection. There is no API key required for the default local knowledge mode.
 
