@@ -163,3 +163,13 @@ For redistribution beyond a private academic demo, confirm permission for suppli
 ## See the new motion
 
 Press **Take the cinematic tour** on the opening screen, or the play icon in the bottom room navigator. It moves through the eight rooms with a pause at each stop. Stop with the pause icon. **Next room** travels once, the compass opens the room selector, and **✦** releases gold dust. Motion controls and operating-system reduced-motion preferences are respected. The camera path is a layered perspective effect, not a rendered 3D world.
+
+## For Fun — Palmistry Story Reading
+
+After analyzing both palms, select **For Fun Reading** in the Field Notes section. Choose Adventure, Friendship & connection, or Creativity & purpose, optionally select your own symbolic line shapes, and create an imagined three-chapter story. The notice **For fun only — not a factual prediction** stays visible. Stories can be downloaded as JSON.
+
+No database is required. Without an AI key, an explicitly labeled local authored story is shown. The Python app can use the configured Gemini/OpenAI provider; provider failures fall back with a visible label. Only candidate counts, user-selected symbols, theme, and curated notes are sent to that provider—not raw photos. Manual symbols are storytelling prompts, not verified line classifications.
+
+The new endpoint is `POST /api/fun-reading` with `scan_id`, `theme`, and optional `choices`. A current analyzed session is required. Replacing images or clearing the session invalidates its story. This feature is included in the GitHub source for local/Render deployment; the separate ChatGPT-hosted preview is not automatically updated by GitHub pushes.
+
+Feature checks: six Flask/local-story tests cover session expiry and clearing, bad inputs, actual candidate counts, provider response validation/fallback, and exclusion of raw photos from the AI prompt. Run `python -m unittest discover -s tests -v`. The vision module is stubbed in these story tests, so they do not test recognition accuracy. JavaScript syntax was checked; full browser story-flow and live AI-provider testing remain to be done.
