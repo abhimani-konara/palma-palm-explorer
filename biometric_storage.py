@@ -1,3 +1,4 @@
+from contextlib import closing
 
 import os
 import sqlite3
@@ -25,7 +26,7 @@ def get_cipher():
 def initialize_database():
     """Create database tables if they do not exist."""
 
-    with sqlite3.connect(DB_PATH) as connection:
+    with closing(sqlite3.connect(DB_PATH)) as connection, connection:
 
         # Registered palm biometric templates
         connection.execute("""
@@ -92,7 +93,7 @@ def save_enrollment(enrollment):
 
     initialize_database()
 
-    with sqlite3.connect(DB_PATH) as connection:
+    with closing(sqlite3.connect(DB_PATH)) as connection, connection:
         connection.execute("""
             INSERT INTO enrollments
                 (user_id, hand_side, encrypted_templates, created_at)
@@ -121,7 +122,7 @@ def load_enrollment(user_id):
 
     initialize_database()
 
-    with sqlite3.connect(DB_PATH) as connection:
+    with closing(sqlite3.connect(DB_PATH)) as connection, connection:
         record = connection.execute(
             """
             SELECT hand_side, encrypted_templates
@@ -180,7 +181,7 @@ def save_authentication_log(user_id, outcome, score=None, duration_ms=None):
 
     initialize_database()
 
-    with sqlite3.connect(DB_PATH) as connection:
+    with closing(sqlite3.connect(DB_PATH)) as connection, connection:
         cursor = connection.execute(
             """
             INSERT INTO authentication_logs
@@ -212,7 +213,7 @@ def get_authentication_logs(user_id):
 
     initialize_database()
 
-    with sqlite3.connect(DB_PATH) as connection:
+    with closing(sqlite3.connect(DB_PATH)) as connection, connection:
         connection.row_factory = sqlite3.Row
 
         rows = connection.execute(
@@ -236,7 +237,7 @@ def delete_enrollment(user_id):
 
     initialize_database()
 
-    with sqlite3.connect(DB_PATH) as connection:
+    with closing(sqlite3.connect(DB_PATH)) as connection, connection:
         cursor = connection.execute(
             "DELETE FROM enrollments WHERE user_id = ?",
             (user_id.strip(),)
