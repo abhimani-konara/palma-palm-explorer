@@ -31,3 +31,9 @@ palm_*.png
 palm_*.jpg
 palm_*.jpeg
 palm_*.webp
+
+# Local biometric diagnostic scripts
+/batch_enroll.py
+/check_pa_edges.py
+/check_pa_edges_5.py
+/verification_dev.py
