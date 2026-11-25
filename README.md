@@ -54,7 +54,7 @@ python app.py
 
 ## What works
 
-- Cinematic room travel: perspective departure/arrival, glowing archway passage, eight-room selector, Next room, and an opt-in automatic tour.
+- Cinematic room travel: perspective departure/arrival, glowing archway passage, nine-room selector, Next room, and an opt-in automatic tour.
 - Gold rain across the whole site and a user-triggered gold-dust shower.
 - Genesis dial: drag/swipe, mouse wheel, arrow keys, Home/End, play/pause/reset.
 - Photographic line explorer: four clickable illustrated line locations, story dialogs, tilt, zoom, spin and reset; switch to the supplied heritage artwork.
@@ -143,9 +143,59 @@ VALIDATION.md           checks performed and remaining device tests
 
 Python keeps at most 18 compact feature/report records in process memory. The cache excludes image outputs; records expire after one hour and are pruned on analysis/chat activity. Restarting the server clears them. Browser results remain in page memory; replacing inputs invalidates old results, and Clear session removes them. Nothing persists across devices.
 
+## ICA02 - Palm Biometric Authentication
+
+The development branch includes a separate academic
+palm-based biometric authentication prototype.
+
+### Core workflow
+
+1. Register a pseudonymous participant ID with consent.
+2. Enroll three images of the same palm.
+3. Perform image quality and hand-side checks.
+4. Detect and normalize the palm region of interest.
+5. Extract Canny edge and LBP texture features.
+6. Encrypt and store numerical biometric templates.
+7. Verify a claimed ID using a fresh palm image.
+8. Display the matching decision and record audit metadata.
+
+### Main implementation files
+
+- `biometric.py` - preprocessing, features and matching.
+- `biometric_storage.py` - encrypted SQLite storage.
+- `biometric_api.py` - verification endpoints.
+- `biometric_enrollment_api.py` - enrollment endpoints.
+- `admin_auth.py` - local administrative access.
+- `feature_ablation_eval.py` - feature comparison.
+- `ICA02_EVALUATION_RESULTS.md` - evaluation findings.
+- `tests/test_biometric_security.py` - security tests.
+- `tests/test_biometric_storage.py` - storage tests.
+
+### Evaluation
+
+The experimental combined-score threshold is 0.90.
+Edge-only, LBP-only and combined methods have been
+evaluated using separate validation and final test images.
+
+See `ICA02_EVALUATION_RESULTS.md` for trial counts,
+FAR, FRR, accuracy, confusion matrices and limitations.
+
+### Security and deployment
+
+Biometric templates are encrypted using Fernet.
+Secrets and the local biometric database must never
+be committed to the repository.
+
+Administrative biometric features are intended for
+controlled local testing. The prototype has not been
+validated for public or high-stakes authentication.
+
+Participant consent, secure retention and deletion
+procedures remain important requirements.
+
 ## Academic limits
 
-This is a **palm-image processing and cultural interpretation project**, not biometric identity authentication. Neither pipeline includes a trained palmistry-line classifier. All line associations are exploratory and low confidence. Background edges can be selected. The decorative atlas lines are illustrative and never substituted for actual observations.
+PALMA includes two academic prototypes: **ICA01**, for palm-image processing and cultural interpretation, and **ICA02**, for palm biometric enrollment and one-to-one verification. The biometric component is an educational prototype, not production-grade identity security. Neither pipeline includes a trained palmistry-line classifier. All line associations are exploratory and low confidence. Background edges can be selected. The decorative atlas lines are illustrative and never substituted for actual observations.
 
 Palmistry is not a scientifically validated way to predict health, lifespan, personality, wealth, relationships, career outcomes or future events. The report must be presented as cultural context, separate from measured image properties.
 
