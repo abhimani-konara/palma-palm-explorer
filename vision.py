@@ -182,7 +182,9 @@ def analyze(data,hand):
             'grayscale':encoded(cv2.cvtColor(gray,cv2.COLOR_GRAY2BGR)),
             'gaussian':encoded(cv2.cvtColor(denoised,cv2.COLOR_GRAY2BGR)),
             'clahe':encoded(cv2.cvtColor(clahe,cv2.COLOR_GRAY2BGR)),
-            'edges':encoded(cv2.cvtColor(edges,cv2.COLOR_GRAY2BGR)),
+
+'edges':encoded(cv2.cvtColor(cv2.bitwise_and(edges, edges, mask=mask), cv2.COLOR_GRAY2BGR)),
+
             'threshold':encoded(cv2.cvtColor(threshold,cv2.COLOR_GRAY2BGR)),
             'morphology':encoded(cv2.cvtColor(morph,cv2.COLOR_GRAY2BGR)),
             'annotated':encoded(overlay),

@@ -12,6 +12,12 @@ from fun_reading import build_fun_reading
 
 load_dotenv()
 app=Flask(__name__, static_folder='dist', static_url_path='')
+from biometric_api import biometric_bp
+app.register_blueprint(biometric_bp)
+from admin_auth import admin_bp
+app.register_blueprint(admin_bp)
+from biometric_enrollment_api import enrollment_bp
+app.register_blueprint(enrollment_bp)
 app.config['MAX_CONTENT_LENGTH']=int(os.getenv('MAX_UPLOAD_MB','8'))*1024*1024*2
 app.config['SECRET_KEY']=os.getenv('SECRET_KEY') or secrets.token_hex(24)
 app.json.ensure_ascii=False
@@ -115,3 +121,11 @@ def headers(resp):
 if __name__=='__main__':
     app.run(host='127.0.0.1',port=int(os.getenv('PORT','5000')),debug=False)
 
+
+
+# Local biometric admin session settings
+from datetime import timedelta
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(minutes=20)
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Strict"
+app.config["SESSION_COOKIE_SECURE"] = False
