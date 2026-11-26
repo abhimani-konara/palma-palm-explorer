@@ -380,9 +380,9 @@
 
             if (!response.ok) {
                 verifyStatus.textContent =
-                    data.error ||
-                    data.message ||
-                    "Verification could not be completed.";
+                    data.status === "Invalid Image"
+                        ? "Invalid Image: " + (data.message || "Palm image rejected.")
+                        : (data.error || data.message || "Verification could not be completed.");
                 return;
             }
 

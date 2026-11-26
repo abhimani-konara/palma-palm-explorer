@@ -1,4 +1,4 @@
-﻿import os
+import os
 import re
 import secrets
 import time
@@ -117,7 +117,7 @@ def biometric_verify():
     if result.get("status") != "score_calculated":
         return jsonify({
             "status": "Invalid Image",
-            "message": "Palm verification could not be completed"
+            "message": "; ".join(str(reason) for reason in (result.get("reasons") or [])) or "Palm verification could not be completed"
         }), 422
 
     score = float(result["average_score"])
