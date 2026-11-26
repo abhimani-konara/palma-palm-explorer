@@ -6,7 +6,6 @@ A complete academic palm-image exploration application, built from the supplied 
 
 ## Open the website
 
-- **Hosted PALMA website:** [Open PALMA online](https://palma-sanctuary-abhi.dewmikonara22.chatgpt.site). This is a private site; sign in with the owner's authorized ChatGPT account.
 - **Local PALMA on your laptop:** [http://127.0.0.1:5001](http://127.0.0.1:5001), after starting the server with the Windows instructions below. Keep the server terminal open.
 - **GitHub repository:** [Source code](https://github.com/abhimani-konara/palma-palm-explorer). This link displays the code; it does not run the Flask application.
 
