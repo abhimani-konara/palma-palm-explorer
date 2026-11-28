@@ -230,23 +230,35 @@ def get_authentication_logs(user_id):
     return [dict(row) for row in rows]
 
 def delete_enrollment(user_id):
-    """Delete one user's stored biometric enrollment."""
+    """Delete a participant's enrollment and authentication history."""
 
     if not isinstance(user_id, str) or not user_id.strip():
         raise ValueError("Valid User ID is required")
 
+    user_id = user_id.strip()
     initialize_database()
 
     with closing(sqlite3.connect(DB_PATH)) as connection, connection:
-        cursor = connection.execute(
+        enrollment_cursor = connection.execute(
             "DELETE FROM enrollments WHERE user_id = ?",
-            (user_id.strip(),)
+            (user_id,)
         )
 
-        deleted_count = cursor.rowcount
+        history_cursor = connection.execute(
+            "DELETE FROM authentication_logs WHERE user_id = ?",
+            (user_id,)
+        )
+
+        enrollment_deleted = enrollment_cursor.rowcount
+        history_deleted = history_cursor.rowcount
 
     return {
-        "status": "Enrollment Deleted" if deleted_count else "Not Found",
-        "user_id": user_id.strip(),
-        "deleted_count": deleted_count
+        "status": (
+            "Participant Data Deleted"
+            if enrollment_deleted or history_deleted
+            else "Not Found"
+        ),
+        "user_id": user_id,
+        "deleted_count": enrollment_deleted,
+        "logs_deleted_count": history_deleted
     }

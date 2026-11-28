@@ -8,6 +8,7 @@ from flask import Flask, jsonify, render_template, request, send_from_directory
 from dotenv import load_dotenv
 from vision import analyze
 from llm import build_report, answer, provider_name
+from gemini_photo import analyze_palm_photos
 from fun_reading import build_fun_reading
 
 load_dotenv()
@@ -46,6 +47,8 @@ def analyze_route():
         if 'left' not in request.files or 'right' not in request.files:
             return jsonify(error='Please upload separate photographs of your LEFT and RIGHT palms.'),400
         results={}
+        photo_consent = request.form.get('gemini_photo_consent') == 'yes'
+        photo_bytes = {}
         for side in ('left','right'):
             file=request.files[side]
             if not file.filename:return jsonify(error=f'Please select a {side} palm image.'),400
@@ -53,12 +56,33 @@ def analyze_route():
                 return jsonify(error=f'{side.title()} palm: use .jpg, .jpeg or .png files.'),400
             data=file.read(8*1024*1024+1)
             if len(data)>8*1024*1024:return jsonify(error=f'{side.title()} palm image exceeds the 8MB per-file limit.'),413
+            if photo_consent:
+                photo_bytes[side] = data
             results[side]=analyze(data,side)
             q=results[side]['quality']
             if q['sharpness_laplacian']<5 or q['brightness']<15 or q['brightness']>246:
                 return jsonify(error=f'{side.title()} image quality is unsuitable. Re-take the picture sharply in even light and upload again.',
                     detail=q['warnings']),422
         report=build_report(results)
+
+        if photo_consent:
+            try:
+                photo_reading = analyze_palm_photos(
+                    photo_bytes['left'],
+                    photo_bytes['right'],
+                    consent=True
+                )
+                report['photo_interpretation'] = photo_reading
+                report['photo_interpretation_status'] = 'completed'
+            except Exception:
+                app.logger.warning(
+                    'Optional Gemini photo analysis unavailable'
+                )
+                report['photo_interpretation_status'] = 'unavailable'
+            finally:
+                photo_bytes.clear()
+        else:
+            report['photo_interpretation_status'] = 'not_requested'
         scan_id=secrets.token_urlsafe(20)
         # Only compact feature records are cached. The image content is NOT retained server-side.
         records={s:{k:v for k,v in r.items() if k!='images'} for s,r in results.items()}

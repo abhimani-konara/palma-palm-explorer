@@ -189,6 +189,7 @@
 
         adminAuthenticated = authenticated;
         updateEnrollmentButton();
+        updateDeleteAccess();
 
         // PALMA ENROLLMENT INPUT FIX
         const enrollId = document.getElementById("bio-enroll-id");
@@ -402,6 +403,130 @@
             verifyButton.disabled = !adminAuthenticated;
         }
     });
+
+
+    // PALMA PARTICIPANT DATA DELETION UI
+
+    const deleteCard = document.createElement("article");
+    deleteCard.className = "biometric-tool-card";
+    deleteCard.innerHTML = `
+        <h3>Delete Participant Data</h3>
+        <p class="biometric-note">
+            Authorized administrators only. Verify the participant's
+            withdrawal request before deleting biometric records.
+        </p>
+        <label for="bio-delete-id">Participant ID</label>
+        <input id="bio-delete-id" type="text"
+               maxlength="40" autocomplete="off">
+        <label for="bio-delete-confirm">Confirm Participant ID</label>
+        <input id="bio-delete-confirm" type="text"
+               maxlength="40" autocomplete="off">
+        <button id="bio-delete-button" type="button" disabled>
+            Delete Participant Data
+        </button>
+        <p id="bio-delete-status" class="biometric-note"
+           role="status" aria-live="polite"></p>
+    `;
+
+    verifyCard.insertAdjacentElement("afterend", deleteCard);
+
+    const deleteId = document.getElementById("bio-delete-id");
+    const deleteConfirm = document.getElementById("bio-delete-confirm");
+    const deleteButton = document.getElementById("bio-delete-button");
+    const deleteStatus = document.getElementById("bio-delete-status");
+
+    let deletionBusy = false;
+
+    function updateDeleteAccess() {
+        const id = deleteId.value.trim();
+        const confirmation = deleteConfirm.value.trim();
+
+        deleteCard.hidden = !adminAuthenticated;
+
+        deleteButton.disabled = (
+            !adminAuthenticated ||
+            !csrfToken ||
+            deletionBusy ||
+            !/^[A-Za-z0-9_-]{1,40}$/.test(id) ||
+            id !== confirmation
+        );
+
+        if (!adminAuthenticated) {
+            deleteId.value = "";
+            deleteConfirm.value = "";
+            deleteStatus.textContent = "";
+        }
+    }
+
+    deleteId.addEventListener("input", updateDeleteAccess);
+    deleteConfirm.addEventListener("input", updateDeleteAccess);
+
+    deleteButton.addEventListener("click", async function () {
+        updateDeleteAccess();
+
+        if (deleteButton.disabled) {
+            return;
+        }
+
+        const userId = deleteId.value.trim();
+
+        const confirmed = window.confirm(
+            "Permanently delete enrollment AND authentication history " +
+            "for participant " + userId + "? This cannot be undone."
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
+        deletionBusy = true;
+        updateDeleteAccess();
+        deleteStatus.textContent = "Deleting participant data...";
+
+        try {
+            const response = await fetch(
+                "/api/biometric/delete-enrollment",
+                {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-Token": csrfToken
+                    },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        confirm_user_id: userId
+                    })
+                }
+            );
+
+            const data = await response.json().catch(
+                () => ({ error: "Unexpected server response" })
+            );
+
+            if (!response.ok) {
+                deleteStatus.textContent =
+                    data.error || "Deletion failed.";
+                return;
+            }
+
+            deleteStatus.textContent =
+                "Participant " + userId +
+                ": enrollment and authentication history deleted.";
+
+            deleteId.value = "";
+            deleteConfirm.value = "";
+
+        } catch (error) {
+            deleteStatus.textContent =
+                "Could not connect to the deletion service.";
+        } finally {
+            deletionBusy = false;
+            updateDeleteAccess();
+        }
+    });
+
+    updateDeleteAccess();
 
     loadSession().catch(function () {
         status.textContent =

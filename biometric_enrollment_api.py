@@ -10,7 +10,7 @@ from PIL import Image, ImageOps, UnidentifiedImageError
 from flask import Blueprint, current_app, jsonify, request, session
 
 from biometric import prepare_enrollment
-from biometric_storage import load_enrollment, save_enrollment
+from biometric_storage import load_enrollment, save_enrollment, delete_enrollment
 
 enrollment_bp = Blueprint(
     "palma_enrollment",
@@ -210,3 +210,62 @@ def enroll_palm():
         hand_side=result["hand_side"],
         template_count=result["template_count"]
     ), 201
+
+
+@enrollment_bp.post("/delete-enrollment")
+def delete_palm_enrollment():
+    """Delete participant enrollment and history with admin authorization."""
+
+    if request.remote_addr not in ("127.0.0.1", "::1"):
+        return jsonify(error="Local access only"), 403
+
+    if session.get("biometric_admin") is not True:
+        return jsonify(error="Admin login required"), 401
+
+    origin = request.headers.get("Origin", "")
+    expected_origin = request.host_url.rstrip("/")
+
+    if origin != expected_origin:
+        return jsonify(error="Invalid request origin"), 403
+
+    expected_csrf = session.get("admin_csrf_token")
+    supplied_csrf = request.headers.get("X-CSRF-Token", "")
+
+    if (
+        not isinstance(expected_csrf, str)
+        or not secrets.compare_digest(supplied_csrf, expected_csrf)
+    ):
+        return jsonify(error="Invalid security token"), 403
+
+    if not request.is_json:
+        return jsonify(error="JSON request required"), 415
+
+    data = request.get_json(silent=True)
+
+    if not isinstance(data, dict):
+        return jsonify(error="Invalid JSON data"), 400
+
+    user_id = data.get("user_id", "")
+    confirmation = data.get("confirm_user_id", "")
+
+    if not isinstance(user_id, str):
+        return jsonify(error="Invalid participant ID"), 400
+
+    user_id = user_id.strip()
+
+    if not re.fullmatch(r"[A-Za-z0-9_-]{1,40}", user_id):
+        return jsonify(error="Invalid participant ID"), 400
+
+    if confirmation != user_id:
+        return jsonify(error="Participant ID confirmation required"), 400
+
+    try:
+        result = delete_enrollment(user_id)
+    except Exception:
+        current_app.logger.exception("Biometric deletion failed")
+        return jsonify(error="Biometric storage unavailable"), 503
+
+    if result["deleted_count"] == 0 and result["logs_deleted_count"] == 0:
+        return jsonify(error="Participant not found"), 404
+
+    return jsonify(ok=True, result=result), 200

@@ -136,9 +136,11 @@ The audit database schema contains an authentication attempt ID, claimed user ID
 
 Participants must give informed consent, be able to withdraw and have associated templates deleted; storage-retention duration and operational deletion procedures must be documented and tested before broader use. A photograph, printout or displayed image can spoof a simple image-based matcher: no liveness/presentation-attack capability was demonstrated. Biometric information is sensitive and cannot be treated like a resettable password.
 
+**Implementation update (28 November 2026):** An admin-authenticated, localhost-restricted, CSRF-protected deletion API now removes a participant enrollment and matching authentication history after ID confirmation. Seven automated API tests passed using temporary databases. The deletion interface was visually verified after admin login and confirmed hidden after logout. A full browser-to-database deletion demonstration and participant consent records still require verification.
+
 ## 10. Software testing and reproducibility
 
-The project’s automated suite last reported 27 of 27 tests passing: 8 tests for the ICA01 cultural story workflow and 19 for ICA02 authorization, input validation, encrypted template storage and administrator login. Tests used a temporary SQLite database and generated test keys where applicable; a test pass does not establish overall security, image-quality generalization or production readiness.
+The project’s automated suite last reported 34 of 34 tests passing: 8 ICA01 tests, 19 existing ICA02 tests, and 7 secure participant-deletion API tests. Tests used a temporary SQLite database and generated test keys where applicable; a test pass does not establish overall security, image-quality generalization or production readiness.
 
 Research scripts include final_test_5.py (held-out combined-score evaluation), validation_4.py (validation comparisons), calibrate_biometrics.py (score analysis) and feature_ablation_eval.py (method-specific validation and final-test metrics). To reproduce the reported findings, the original consented dataset, encrypted enrollment templates, correct local decryption key and compatible installed dependencies must be available. Keep these sensitive prerequisites outside public Git.
 
@@ -152,7 +154,7 @@ Research scripts include final_test_5.py (held-out combined-score evaluation), v
 
 - Method-specific thresholds were tuned on a very small validation set; report selection bias and avoid claiming calibrated identity probabilities.
 
-- Presentation-attack detection, a demonstrated withdrawal/deletion workflow, full participant consent records, a verified UI processing-stage gallery and broader cross-device evaluation remain to be confirmed or completed.
+- Presentation-attack detection, a fully verified browser-to-database withdrawal/deletion workflow, full participant consent records, a verified UI processing-stage gallery and broader cross-device evaluation remain to be confirmed or completed.
 
 - Future experiments should acquire more consenting participants, test acquisition variability, compare threshold sensitivity/ROC curves, preserve strict train-validation-test separation, and report latency for both successful and invalid submissions.
 
@@ -172,7 +174,7 @@ Research scripts include final_test_5.py (held-out combined-score evaluation), v
 
 ## 13. Conclusion
 
-PALMA demonstrates a reproducible classroom pipeline from palm-image acquisition through MediaPipe-assisted ROI localization, OpenCV preprocessing, edge/LBP feature extraction, encrypted enrollment and one-to-one similarity decisions. On 72 valid final comparisons, it observed an accuracy of 98.61%, FAR of 0.00% and FRR of 12.50%, with one additional invalid image. These are limited experimental measurements, not a warranty of biometric security. More participants, improved acquisition robustness, explicit deletion controls and additional adversarial tests are needed before considering broader operation.
+PALMA demonstrates a reproducible classroom pipeline from palm-image acquisition through MediaPipe-assisted ROI localization, OpenCV preprocessing, edge/LBP feature extraction, encrypted enrollment and one-to-one similarity decisions. On 72 valid final comparisons, it observed an accuracy of 98.61%, FAR of 0.00% and FRR of 12.50%, with one additional invalid image. These are limited experimental measurements, not a warranty of biometric security. More participants, improved acquisition robustness, full end-to-end deletion verification and additional adversarial tests are needed before considering broader operation.
 
 ## References and evidence basis
 
