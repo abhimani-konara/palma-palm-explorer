@@ -31,6 +31,52 @@
     verifyStatus.className = "biometric-note";
     verifyButton.insertAdjacentElement("afterend", verifyStatus);
 
+    // Real intermediate stages from the local Flask biometric pipeline.
+    const stageContainer = document.createElement("section");
+    stageContainer.id = "bio-processing-stages";
+    stageContainer.className = "biometric-stage-section";
+    stageContainer.hidden = true;
+    stageContainer.setAttribute("aria-label", "Biometric processing stages");
+    const stageHeading = document.createElement("h4");
+    stageHeading.textContent = "Real image-processing stages";
+    const stageDescription = document.createElement("p");
+    stageDescription.className = "biometric-note";
+    stageDescription.textContent =
+        "Generated locally for this verification. Previews are not saved to the server.";
+    const stageGrid = document.createElement("div");
+    stageGrid.className = "biometric-stage-grid";
+    stageContainer.append(stageHeading, stageDescription, stageGrid);
+    verifyStatus.insertAdjacentElement("afterend", stageContainer);
+
+    function clearStages() {
+        stageGrid.replaceChildren();
+        stageContainer.hidden = true;
+    }
+
+    function renderStages(stages) {
+        clearStages();
+        if (!Array.isArray(stages) || stages.length === 0) {
+            return;
+        }
+        for (const stage of stages) {
+            if (!stage || typeof stage.title !== "string" ||
+                typeof stage.data_url !== "string" ||
+                !stage.data_url.startsWith("data:image/png;base64,")) {
+                continue;
+            }
+            const figure = document.createElement("figure");
+            const img = document.createElement("img");
+            img.loading = "lazy";
+            img.alt = stage.title;
+            img.src = stage.data_url;
+            const caption = document.createElement("figcaption");
+            caption.textContent = stage.title;
+            figure.append(img, caption);
+            stageGrid.append(figure);
+        }
+        stageContainer.hidden = stageGrid.childElementCount === 0;
+    }
+
     if (oldNote) {
         oldNote.textContent = "Authorized local testing only.";
     }
@@ -190,6 +236,11 @@
         adminAuthenticated = authenticated;
         updateEnrollmentButton();
         updateDeleteAccess();
+        updateHistoryAccess();
+        if (!authenticated) {
+            clearStages();
+            clearHistory();
+        }
 
         // PALMA ENROLLMENT INPUT FIX
         const enrollId = document.getElementById("bio-enroll-id");
@@ -287,6 +338,7 @@
 
             csrfToken = data.csrf_token || "";
             showAuthenticated(true);
+            refreshHistory();
 
         } catch (error) {
             passwordInput.value = "";
@@ -360,6 +412,8 @@
         const formData = new FormData();
         formData.append("user_id", userId);
         formData.append("image", imageFile);
+        formData.append("include_stages", "yes");
+        clearStages();
 
         verifyButton.disabled = true;
         verifyStatus.textContent = "Processing palm verification...";
@@ -378,6 +432,8 @@
             );
 
             const data = await response.json();
+            // Verification attempts, including invalid images, are auditable.
+            refreshHistory();
 
             if (!response.ok) {
                 verifyStatus.textContent =
@@ -394,7 +450,17 @@
                     " | Similarity: " + data.score.toFixed(4);
             }
 
+            if (typeof data.threshold === "number") {
+                resultText += " | Threshold: " + data.threshold.toFixed(2);
+            }
+            if (typeof data.duration_ms === "number") {
+                resultText += " | Time: " + data.duration_ms.toFixed(1) + " ms";
+            }
             verifyStatus.textContent = resultText;
+            renderStages(data.stages);
+            if (data.stage_message) {
+                verifyStatus.textContent += " | " + data.stage_message;
+            }
 
         } catch (error) {
             verifyStatus.textContent =
@@ -516,6 +582,7 @@
 
             deleteId.value = "";
             deleteConfirm.value = "";
+            refreshHistory();
 
         } catch (error) {
             deleteStatus.textContent =
@@ -528,7 +595,119 @@
 
     updateDeleteAccess();
 
-    loadSession().catch(function () {
+    // PALMA ADMIN AUDIT HISTORY - read-only, server-provided metadata.
+    const historyCard = document.createElement("article");
+    historyCard.className = "biometric-tool-card";
+    historyCard.id = "bio-history-card";
+    historyCard.hidden = true;
+    historyCard.innerHTML = `
+        <span class="biometric-tool-number">04 / AUDIT</span>
+        <h3>Authentication History</h3>
+        <p class="biometric-note">Latest 50 attempts. No palm photos or templates are stored in this log.</p>
+        <label for="bio-history-filter">Participant ID (optional)</label>
+        <input id="bio-history-filter" type="text" maxlength="40"
+               autocomplete="off" placeholder="All participants">
+        <button id="bio-history-refresh" type="button" disabled>Refresh History</button>
+        <p id="bio-history-status" class="biometric-note" role="status" aria-live="polite"></p>
+        <div class="biometric-table-wrap">
+            <table class="biometric-history-table">
+                <thead><tr>
+                    <th>Attempt</th><th>Participant</th><th>Timestamp (UTC)</th>
+                    <th>Similarity</th><th>Outcome</th><th>Time (ms)</th>
+                </tr></thead>
+                <tbody id="bio-history-rows"></tbody>
+            </table>
+        </div>
+    `;
+    deleteCard.insertAdjacentElement("afterend", historyCard);
+    const historyFilter = document.getElementById("bio-history-filter");
+    const historyRefresh = document.getElementById("bio-history-refresh");
+    const historyStatus = document.getElementById("bio-history-status");
+    const historyRows = document.getElementById("bio-history-rows");
+    let historyBusy = false;
+
+    function clearHistory() {
+        historyRows.replaceChildren();
+        historyStatus.textContent = "";
+        historyFilter.value = "";
+    }
+
+    function updateHistoryAccess() {
+        historyCard.hidden = !adminAuthenticated;
+        historyFilter.disabled = !adminAuthenticated || historyBusy;
+        historyRefresh.disabled = !adminAuthenticated || historyBusy;
+    }
+
+    async function refreshHistory() {
+        if (!adminAuthenticated) {
+            return;
+        }
+        const userId = historyFilter.value.trim();
+        if (userId && !/^[A-Za-z0-9_-]{1,40}$/.test(userId)) {
+            historyStatus.textContent = "Enter a valid participant ID.";
+            return;
+        }
+        historyBusy = true;
+        updateHistoryAccess();
+        historyStatus.textContent = "Loading recent authentication attempts...";
+        try {
+            const url = userId
+                ? "/api/biometric/history?user_id=" + encodeURIComponent(userId)
+                : "/api/biometric/history";
+            const response = await fetch(url, {
+                credentials: "same-origin", cache: "no-store"
+            });
+            const data = await response.json();
+            if (!adminAuthenticated) {
+                return; // A logout may happen while a history request is in flight.
+            }
+            if (!response.ok || !Array.isArray(data.records)) {
+                throw new Error(data.error || "History unavailable");
+            }
+            historyRows.replaceChildren();
+            for (const record of data.records) {
+                const row = document.createElement("tr");
+                const fields = [
+                    record.attempt_id,
+                    record.user_id,
+                    record.timestamp,
+                    typeof record.score === "number" ? record.score.toFixed(4) : "-",
+                    record.outcome,
+                    typeof record.duration_ms === "number" ? record.duration_ms.toFixed(2) : "-"
+                ];
+                for (const field of fields) {
+                    const cell = document.createElement("td");
+                    cell.textContent = field == null ? "-" : String(field);
+                    row.append(cell);
+                }
+                historyRows.append(row);
+            }
+            historyStatus.textContent = data.records.length
+                ? "Showing " + data.records.length + " recent attempt(s)."
+                : "No authentication attempts recorded yet.";
+        } catch (error) {
+            historyRows.replaceChildren();
+            historyStatus.textContent = "Cannot load history. Check the server and admin login.";
+        } finally {
+            historyBusy = false;
+            updateHistoryAccess();
+        }
+    }
+
+    historyRefresh.addEventListener("click", refreshHistory);
+    historyFilter.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            refreshHistory();
+        }
+    });
+    updateHistoryAccess();
+
+    loadSession().then(function () {
+        if (adminAuthenticated) {
+            refreshHistory();
+        }
+    }).catch(function () {
         status.textContent =
             "Admin service unavailable. Restart the Flask server.";
         form.hidden = true;

@@ -6,12 +6,13 @@ import time
 import cv2
 import numpy as np
 
-from flask import Blueprint, jsonify, request, session
+from flask import Blueprint, current_app, jsonify, request, session
 
 from biometric import verify_palm_image
 from biometric_storage import (
     load_enrollment,
-    save_authentication_log
+    save_authentication_log,
+    list_authentication_logs
 )
 
 biometric_bp = Blueprint(
@@ -21,6 +22,33 @@ biometric_bp = Blueprint(
 )
 
 THRESHOLD = 0.90
+
+
+@biometric_bp.after_request
+def prevent_biometric_caching(response):
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@biometric_bp.get("/history")
+def biometric_history():
+    """Read-only recent audit history for a signed-in local administrator."""
+    if request.remote_addr not in ("127.0.0.1", "::1"):
+        return jsonify(error="Local access only"), 403
+
+    if session.get("biometric_admin") is not True:
+        return jsonify(error="Admin login required"), 401
+
+    user_id = request.args.get("user_id", "").strip() or None
+    try:
+        rows = list_authentication_logs(user_id=user_id, limit=50)
+    except ValueError:
+        return jsonify(error="Invalid participant ID"), 400
+    except Exception:
+        current_app.logger.exception("Unable to load authentication history")
+        return jsonify(error="Authentication history unavailable"), 503
+
+    return jsonify(ok=True, records=rows, count=len(rows)), 200
 
 
 @biometric_bp.get("/health")
@@ -96,7 +124,14 @@ def biometric_verify():
     image = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
 
     if image is None:
-        return jsonify(error="Invalid image"), 422
+        save_authentication_log(user_id, "Invalid Image", None,
+                                round((time.perf_counter() - start) * 1000, 2))
+        return jsonify(status="Invalid Image", message="Image could not be decoded"), 422
+
+    if image.shape[0] * image.shape[1] > 16_000_000:
+        save_authentication_log(user_id, "Invalid Image", None,
+                                round((time.perf_counter() - start) * 1000, 2))
+        return jsonify(status="Invalid Image", message="Image is too large"), 422
 
     try:
         enrollment = load_enrollment(user_id)
@@ -104,9 +139,10 @@ def biometric_verify():
         return jsonify(error="Biometric service unavailable"), 503
 
     if enrollment is None:
-        return jsonify({
-            "status": "Failed Authentication"
-        }), 200
+        duration_ms = round((time.perf_counter() - start) * 1000, 2)
+        save_authentication_log(user_id, "Failed", None, duration_ms)
+        return jsonify(status="Authentication Failed", score=None,
+                       threshold=THRESHOLD, duration_ms=duration_ms), 200
 
     result = verify_palm_image(
         enrollment,
@@ -115,18 +151,21 @@ def biometric_verify():
     )
 
     if result.get("status") != "score_calculated":
+        duration_ms = round((time.perf_counter() - start) * 1000, 2)
+        save_authentication_log(user_id, "Invalid Image", None, duration_ms)
         return jsonify({
             "status": "Invalid Image",
-            "message": "; ".join(str(reason) for reason in (result.get("reasons") or [])) or "Palm verification could not be completed"
+            "message": "; ".join(str(reason) for reason in (result.get("reasons") or [])) or "Palm verification could not be completed",
+            "duration_ms": duration_ms,
         }), 422
 
     score = float(result["average_score"])
     accepted = score >= THRESHOLD
 
     outcome = (
-        "Successful Authentication"
+        "Authentication Successful"
         if accepted
-        else "Failed Authentication"
+        else "Authentication Failed"
     )
 
     duration_ms = round(
@@ -140,11 +179,23 @@ def biometric_verify():
         duration_ms
     )
 
-    return jsonify({
+    response = {
         "user_id": user_id,
         "status": outcome,
         "score": round(score, 4),
         "threshold": THRESHOLD,
         "threshold_type": "experimental",
-        "duration_ms": duration_ms
-    }), 200
+        "duration_ms": duration_ms,
+    }
+
+    # In-memory visual feedback, only if the authenticated requester opts in.
+    # Failure to render preview images must not change the biometric decision.
+    if request.form.get("include_stages") == "yes":
+        try:
+            from biometric_visuals import render_processing_stages
+            response["stages"] = render_processing_stages(image)
+        except Exception:
+            current_app.logger.warning("Palm processing preview unavailable")
+            response["stage_message"] = "Processing previews unavailable for this image."
+
+    return jsonify(response), 200

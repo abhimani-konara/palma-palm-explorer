@@ -262,3 +262,43 @@ def delete_enrollment(user_id):
         "deleted_count": enrollment_deleted,
         "logs_deleted_count": history_deleted
     }
+
+
+def list_authentication_logs(user_id=None, limit=50):
+    """Return the newest audit metadata; never expose biometric templates."""
+
+    if user_id is not None:
+        import re
+        if not isinstance(user_id, str) or not re.fullmatch(
+            r"[A-Za-z0-9_-]{1,40}", user_id
+        ):
+            raise ValueError("Invalid participant ID")
+
+    if not isinstance(limit, int) or not 1 <= limit <= 100:
+        raise ValueError("Invalid history limit")
+
+    initialize_database()
+
+    with closing(sqlite3.connect(DB_PATH)) as connection:
+        connection.row_factory = sqlite3.Row
+        if user_id is None:
+            rows = connection.execute(
+                """
+                SELECT attempt_id, user_id, timestamp, score,
+                       outcome, duration_ms
+                FROM authentication_logs
+                ORDER BY attempt_id DESC LIMIT ?
+                """, (limit,)
+            ).fetchall()
+        else:
+            rows = connection.execute(
+                """
+                SELECT attempt_id, user_id, timestamp, score,
+                       outcome, duration_ms
+                FROM authentication_logs
+                WHERE user_id = ?
+                ORDER BY attempt_id DESC LIMIT ?
+                """, (user_id, limit)
+            ).fetchall()
+
+    return [dict(row) for row in rows]

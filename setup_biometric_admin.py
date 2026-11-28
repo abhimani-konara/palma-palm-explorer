@@ -1,4 +1,4 @@
-﻿from pathlib import Path
+from pathlib import Path
 from getpass import getpass
 from secrets import token_hex
 import subprocess
@@ -64,6 +64,37 @@ if not existing.get("SECRET_KEY"):
         token_hex(32),
         quote_mode="always"
     )
+
+# Do not replace an encryption key for an existing enrollment database.
+if not existing.get("PALMA_BIOMETRIC_KEY"):
+    import sqlite3
+    from cryptography.fernet import Fernet
+
+    existing_db = Path("biometric_data.sqlite3")
+    if existing_db.is_file():
+        try:
+            with sqlite3.connect(existing_db) as connection:
+                count = connection.execute(
+                    "SELECT COUNT(*) FROM enrollments"
+                ).fetchone()[0]
+        except sqlite3.Error:
+            raise SystemExit(
+                "Existing biometric database found but cannot be inspected. "
+                "Restore its original key before proceeding."
+            )
+        if count:
+            raise SystemExit(
+                "Existing enrollments detected without PALMA_BIOMETRIC_KEY. "
+                "Restore the original encryption key; never replace it."
+            )
+
+    set_key(
+        str(env_path),
+        "PALMA_BIOMETRIC_KEY",
+        Fernet.generate_key().decode("ascii"),
+        quote_mode="always"
+    )
+    print("New biometric encryption key securely configured in local .env.")
 
 print("---------------------------")
 print("Admin password hash saved securely.")

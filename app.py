@@ -142,14 +142,12 @@ def headers(resp):
     resp.headers['Referrer-Policy']='no-referrer'
     return resp
 
-if __name__=='__main__':
-    app.run(host='127.0.0.1',port=int(os.getenv('PORT','5000')),debug=False)
-
-
-
-# Local biometric admin session settings
+# Local biometric admin session settings; configure before serving requests.
 from datetime import timedelta
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(minutes=20)
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Strict"
-app.config["SESSION_COOKIE_SECURE"] = False
+app.config["SESSION_COOKIE_SECURE"] = False  # localhost HTTP; use True for HTTPS deployment
+
+if __name__=='__main__':
+    app.run(host='127.0.0.1',port=int(os.getenv('PORT','5000')),debug=False)

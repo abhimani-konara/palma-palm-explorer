@@ -144,6 +144,24 @@ The project’s automated suite last reported 34 of 34 tests passing: 8 ICA01 te
 
 Research scripts include final_test_5.py (held-out combined-score evaluation), validation_4.py (validation comparisons), calibrate_biometrics.py (score analysis) and feature_ablation_eval.py (method-specific validation and final-test metrics). To reproduce the reported findings, the original consented dataset, encrypted enrollment templates, correct local decryption key and compatible installed dependencies must be available. Keep these sensitive prerequisites outside public Git.
 
+### ICA02 UI implementation update (28 November 2026)
+
+The submitted review patch adds a localhost-only, admin-session-protected
+`GET /api/biometric/history` endpoint returning the newest 50 metadata-only
+authentication attempts, with an optional validated participant ID filter.
+The UI now renders this audit table without injecting participant strings
+as HTML. The verification API optionally returns temporary PNG previews of
+observed MediaPipe landmarks, the extracted palm ROI, grayscale, Gaussian
+filtering, CLAHE, Canny edges and LBP codes; the interface clears these
+previews on logout. The backend does not save preview images.
+
+A fresh install now requires a compatible pinned MediaPipe release and
+cryptography. The admin setup helper creates the biometric key only when
+that will not risk overwriting encrypted existing enrollments. This patch
+includes dedicated automated API tests, but installation, a real browser
+flow and evidence must still be verified by the student before claiming
+submission readiness. Prior experimental rates are intentionally unchanged.
+
 ## 11. Limitations and planned improvements
 
 - Nine participants fall below the brief’s recommended 10; correlated impostor attempts and one invalid image limit statistical confidence. A measured FAR of 0.00% does not mean the false-accept risk is zero.
@@ -154,7 +172,7 @@ Research scripts include final_test_5.py (held-out combined-score evaluation), v
 
 - Method-specific thresholds were tuned on a very small validation set; report selection bias and avoid claiming calibrated identity probabilities.
 
-- Presentation-attack detection, a fully verified browser-to-database withdrawal/deletion workflow, full participant consent records, a verified UI processing-stage gallery and broader cross-device evaluation remain to be confirmed or completed.
+- Presentation-attack detection, a fully verified browser-to-database withdrawal/deletion workflow, full participant consent records, gallery/history browser verification on a real enrolled test image and broader cross-device evaluation remain to be confirmed or completed.
 
 - Future experiments should acquire more consenting participants, test acquisition variability, compare threshold sensitivity/ROC curves, preserve strict train-validation-test separation, and report latency for both successful and invalid submissions.
 
