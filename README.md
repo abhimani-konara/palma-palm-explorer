@@ -1,12 +1,11 @@
 # PALMA — Ancient art, modern palm exploration
 
-Designed & developed by **Abhimani Konara**. © 2026 Abhimani Konara. All rights reserved. Credits for supplied/generated visuals remain listed below.
+PALMA is an academic group project for the Digital Image Processing module at NIBM Kandy Innovation Centre (KIC). © 2026 PALMA Project Team.
 
 A complete academic palm-image exploration application, built from the supplied group-project Python modules and the PALMA interface. The look combines a user-controlled fresco-to-cyber transition, jewel colors, a photographic palm, line hotspots, layered depth, a rotating/zoomable artwork, a heritage room, and decorative flying doves.
 
 ## Open the website
 
-- **Hosted PALMA website:** [Open PALMA online](https://palma-sanctuary-abhi.dewmikonara22.chatgpt.site). This is a private site; sign in with the owner's authorized ChatGPT account.
 - **Local PALMA on your laptop:** [http://127.0.0.1:5001](http://127.0.0.1:5001), after starting the server with the Windows instructions below. Keep the server terminal open.
 - **GitHub repository:** [Source code](https://github.com/abhimani-konara/palma-palm-explorer). This link displays the code; it does not run the Flask application.
 
@@ -54,7 +53,7 @@ python app.py
 
 ## What works
 
-- Cinematic room travel: perspective departure/arrival, glowing archway passage, eight-room selector, Next room, and an opt-in automatic tour.
+- Cinematic room travel: perspective departure/arrival, glowing archway passage, nine-room selector, Next room, and an opt-in automatic tour.
 - Gold rain across the whole site and a user-triggered gold-dust shower.
 - Genesis dial: drag/swipe, mouse wheel, arrow keys, Home/End, play/pause/reset.
 - Photographic line explorer: four clickable illustrated line locations, story dialogs, tilt, zoom, spin and reset; switch to the supplied heritage artwork.
@@ -143,9 +142,121 @@ VALIDATION.md           checks performed and remaining device tests
 
 Python keeps at most 18 compact feature/report records in process memory. The cache excludes image outputs; records expire after one hour and are pruned on analysis/chat activity. Restarting the server clears them. Browser results remain in page memory; replacing inputs invalidates old results, and Clear session removes them. Nothing persists across devices.
 
+## ICA02 - Palm Biometric Authentication
+
+The development branch includes a separate academic
+palm-based biometric authentication prototype.
+
+### Core workflow
+
+1. Register a pseudonymous participant ID with consent.
+2. Enroll three images of the same palm.
+3. Perform image quality and hand-side checks.
+4. Detect and normalize the palm region of interest.
+5. Extract Canny edge and LBP texture features.
+6. Encrypt and store numerical biometric templates.
+7. Verify a claimed ID using a fresh palm image.
+8. Display the matching decision and record audit metadata.
+
+### Main implementation files
+
+- `biometric.py` - preprocessing, features and matching.
+- `biometric_storage.py` - encrypted SQLite storage.
+- `biometric_api.py` - verification endpoints.
+- `biometric_enrollment_api.py` - enrollment endpoints.
+- `admin_auth.py` - local administrative access.
+- `feature_ablation_eval.py` - feature comparison.
+- `ICA02_EVALUATION_RESULTS.md` - evaluation findings.
+- `tests/test_biometric_security.py` - security tests.
+- `tests/test_biometric_storage.py` - storage tests.
+
+### Evaluation
+
+The experimental combined-score threshold is 0.90.
+Edge-only, LBP-only and combined methods have been
+evaluated using separate validation and final test images.
+
+See `ICA02_EVALUATION_RESULTS.md` for trial counts,
+FAR, FRR, accuracy, confusion matrices and limitations.
+
+### Security and deployment
+
+Biometric templates are encrypted using Fernet.
+Secrets and the local biometric database must never
+be committed to the repository.
+
+Administrative biometric features are intended for
+controlled local testing. The prototype has not been
+validated for public or high-stakes authentication.
+
+Participant consent, secure retention and deletion
+procedures remain important requirements.
+
+
+### ICA02 quick start (Windows, Python 3.11)
+
+Extract the complete project ZIP, including `dist/assets/`. Open PowerShell
+in the folder containing `app.py`. Create a virtual environment and install
+required dependencies (MediaPipe, OpenCV and cryptography included):
+
+```powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+Copy-Item .env.example .env
+.\.venv\Scripts\python.exe setup_biometric_admin.py
+.\.venv\Scripts\python.exe app.py
+```
+
+If `.env` already exists, do **not** overwrite it. `Copy-Item` above is only
+for first-time installation. The setup helper asks for a new admin password,
+creates a password hash, session secret, and a fresh Fernet key when no
+existing protected participant records are at risk. The key **must stay
+unchanged** to decrypt existing enrollments. On other members' computers,
+use separate new test enrollments with their own participants' consent;
+never copy the original participant database or secret key into the ZIP.
+
+Open the address printed by Flask, typically
+`http://127.0.0.1:5000/#biometric`; log in under **Biometric ID**. The local
+admin panel supports three-photo enrollment, single-photo verification with
+experimental threshold 0.90, a real processing-stage gallery, latest-50
+read-only authentication history, and confirmed participant data deletion.
+Uploaded verification images and visual previews are processed in memory;
+there is no persistent raw-photo audit archive. The history contains only
+pseudonymous IDs, timestamps, scores, outcomes and durations.
+
+If you already have a working `.env`, use only the dependency-install and
+`app.py` commands; don't rerun setup unless you intend to change the admin
+password. Do not disclose `.env`, `biometric_data.sqlite3`, palm photographs,
+real passwords or API keys with group files or on GitHub.
+
+Run automated tests using:
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+```
+
+Verify the browser workflow on the actual target device: sign in, test one
+consented enrollment, verify using a *different* valid image, inspect the
+actual image gallery and log table, test an invalid image, and delete a
+**new disposable test participant** (never a real enrollment just for a
+screenshot). Record sanitized screenshots for the demonstration video.
+This is a classroom prototype; liveness detection is not provided.
+
+### ICA02 sample retention and withdrawal policy
+
+For the educational assessment, keep the encrypted participant templates and
+metadata-only attempt logs **only until assessment completion or earlier
+withdrawal**, then securely delete them. The admin's Delete Participant Data
+control deletes the selected ID's template and authentication history from
+SQLite, not source JPG images stored separately in a participant dataset,
+backup ZIP or screenshots. On withdrawal also remove all separately held raw
+images and backups manually and document the action with the participant.
+Keep individual consent records separately and privately, not in Git or the
+shared project ZIP. Do not use this prototype for high-stakes access control.
+
 ## Academic limits
 
-This is a **palm-image processing and cultural interpretation project**, not biometric identity authentication. Neither pipeline includes a trained palmistry-line classifier. All line associations are exploratory and low confidence. Background edges can be selected. The decorative atlas lines are illustrative and never substituted for actual observations.
+PALMA includes two academic prototypes: **ICA01**, for palm-image processing and cultural interpretation, and **ICA02**, for palm biometric enrollment and one-to-one verification. The biometric component is an educational prototype, not production-grade identity security. Neither pipeline includes a trained palmistry-line classifier. All line associations are exploratory and low confidence. Background edges can be selected. The decorative atlas lines are illustrative and never substituted for actual observations.
 
 Palmistry is not a scientifically validated way to predict health, lifespan, personality, wealth, relationships, career outcomes or future events. The report must be presented as cultural context, separate from measured image properties.
 
@@ -170,6 +281,6 @@ After analyzing both palms, select **For Fun Reading** in the Field Notes sectio
 
 No database is required. Without an AI key, an explicitly labeled local authored story is shown. The Python app can use the configured Gemini/OpenAI provider; provider failures fall back with a visible label. Only candidate counts, user-selected symbols, theme, and curated notes are sent to that provider—not raw photos. Manual symbols are storytelling prompts, not verified line classifications.
 
-The new endpoint is `POST /api/fun-reading` with `scan_id`, `theme`, and optional `choices`. A current analyzed session is required. Replacing images or clearing the session invalidates its story. This feature is included in the GitHub source for local/Render deployment; the separate ChatGPT-hosted preview is not automatically updated by GitHub pushes.
+The new endpoint is `POST /api/fun-reading` with `scan_id`, `theme`, and optional `choices`. A current analyzed session is required. Replacing images or clearing the session invalidates its story. This feature is included in the source for local deployment.
 
 Feature checks: eight Flask/local-story tests cover session expiry and clearing, bad inputs, actual candidate counts, provider response validation/fallback, and exclusion of raw photos from the AI prompt. Run `python -m unittest discover -s tests -v`. The vision module is stubbed in these story tests, so they do not test recognition accuracy. JavaScript syntax and the browser-local builder for all five topic choices were checked in Node. Full browser flow and live AI-provider testing remain to be done.

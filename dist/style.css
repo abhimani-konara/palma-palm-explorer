@@ -19,3 +19,279 @@
 .source-download{font-size:8px;color:#e0bf88;border-bottom:1px solid #d2aa6455;padding:8px 0;margin:0 20px}footer{gap:15px;flex-wrap:wrap}.dove-flight{opacity:.85}
 /* A camera passage through the rooms, with falling gold across the whole site. */
 #gold-rain{position:fixed;inset:0;width:100%;height:100%;z-index:32;pointer-events:none;opacity:.9}#camera-flight{position:fixed;inset:0;z-index:80;pointer-events:none;opacity:0;visibility:hidden;perspective:900px;overflow:hidden;transform-style:preserve-3d}#camera-flight.flight-active{visibility:visible;animation:flightVeil 1.9s ease-in-out both;pointer-events:auto}.camera-in-flight{overflow:hidden}.flight-vignette{position:absolute;inset:0;background:radial-gradient(ellipse at center,#061b2155 10%,#090b17f5 75%),linear-gradient(110deg,#7c173eaa,#005e4588);backdrop-filter:blur(6px)}.flight-corridor{position:absolute;inset:-5%;transform-style:preserve-3d;perspective:800px;transform:rotateY(var(--flight-angle,24deg)) rotateX(7deg)}.flight-arch{position:absolute;left:calc(50% - 230px);top:calc(50% - 300px);width:460px;height:650px;border:2px solid #edc16d99;border-radius:250px 250px 0 0;box-shadow:0 0 30px #e9ad5833,inset 0 0 22px #00d8a522;opacity:0;transform-style:preserve-3d}.flight-arch:before,.flight-arch:after{content:'';position:absolute;top:0;bottom:0;left:20px;width:9px;border-inline:1px solid #dcaf6a55;background:repeating-linear-gradient(90deg,#cba56314 0 2px,transparent 2px 4px)}.flight-arch:after{left:auto;right:20px}.flight-active .flight-arch{animation:archPassage 1.65s cubic-bezier(.36,.02,.55,.99) both}.flight-active .fa2{animation-delay:.14s;border-color:#6cf4c388}.flight-active .fa3{animation-delay:.28s}.flight-active .fa4{animation-delay:.4s;border-color:#d65d8970}.flight-active .fa5{animation-delay:.52s}.flight-light{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 44%,#f9ddb95c,transparent 35%);mix-blend-mode:screen;opacity:0}.flight-active .flight-light{animation:portalLens 1.9s ease-in-out both}.flight-caption{position:absolute;left:0;right:0;text-align:center;top:46%;color:#ffdf9b;text-shadow:0 3px 35px #000;z-index:5}.flight-caption>span{display:block;font-size:8px;letter-spacing:4px;color:#f2c88e}.flight-caption>strong{display:block;font:52px/1.2 'Cormorant Garamond',Georgia;font-weight:400;margin:18px 0}.flight-caption>small{font:9px monospace;letter-spacing:4px;color:#8af8d5}.flight-active .flight-caption{animation:passageCaption 1.9s both}.room-departure{transform-origin:50% 45%;animation:roomDepart .75s cubic-bezier(.4,0,.7,.4) both;will-change:transform,opacity}.room-arrival{transform-origin:50% 25%;animation:roomArrive 1.2s cubic-bezier(.18,.75,.22,1) both;will-change:transform,opacity}.journey-dock{display:flex!important;gap:0;align-items:center;position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:42;background:linear-gradient(105deg,#291823ed,#092b24ed);border:1px solid #e0b57655;border-radius:50px;padding:6px 8px;box-shadow:0 12px 45px #0007,0 0 22px #deba5c10;backdrop-filter:blur(20px);color:#efd8b2}.journey-dock>button{background:none;border:0;display:flex;align-items:center;color:inherit;gap:13px;cursor:pointer;height:42px;padding:4px 13px}.journey-dock>button+button{border-left:1px solid #c7aa722a}#room-menu-toggle{min-width:200px;text-align:left}.compass-icon{display:grid;place-items:center;border:1px solid #c6ad7855;border-radius:50%;width:33px;height:33px;font-size:25px;color:#f5ce8d;text-shadow:0 0 14px #ebbf6a55;animation:celestialTurn 35s linear infinite}#room-menu-toggle small{display:block;font-size:5px;letter-spacing:1.8px;color:#b8bb9a;margin-bottom:4px}#room-menu-toggle b{font-size:10px;font-weight:500;white-space:nowrap}#room-menu-toggle i{font-size:12px;font-style:normal;color:#d9b679;margin-left:auto}#journey-next{font-size:7px;letter-spacing:1px;white-space:nowrap}#journey-next b{font-size:20px;font-weight:400;color:#f2cd8b}#dust-shower{font-size:24px;color:#f7d58d;text-shadow:0 0 18px #d7b04866}#tour-control{font-size:20px}.tour-running #tour-control{color:#8df7ce;text-shadow:0 0 14px #04ffc255}#room-menu{display:grid;position:absolute;left:0;right:0;bottom:calc(100% + 14px);padding:10px;border:1px solid #d8b57555;border-radius:14px;background:linear-gradient(135deg,#291a28fa,#0b2922fa);box-shadow:0 10px 50px #0008;max-height:70vh;overflow:auto}#room-menu>button{display:flex;align-items:center;gap:15px;border:0;border-bottom:1px solid #dab57718;background:none;text-align:left;padding:12px 14px;color:#e4cda8}#room-menu>button:hover,#room-menu>button.room-current{background:#b99c4c12;border-radius:6px}#room-menu>button>span{font-size:8px;color:#7be9c2}#room-menu>button>div{flex:1}#room-menu strong{display:block;font:21px 'Cormorant Garamond',Georgia;font-weight:400}#room-menu small{display:block;font-size:7px;color:#a7b9a9;margin-top:5px}#room-menu b{font-size:16px;font-weight:400;color:#e9c281}.genesis-links{display:flex;gap:25px;align-items:center;flex-wrap:wrap}.cinema-launch{margin-top:14px;padding:10px 0;background:none;border:0;border-bottom:1px solid #84dab45e;font-size:10px;color:#a6efd3;letter-spacing:.5px;display:flex;align-items:center;gap:8px}.cinema-launch:hover{color:#e5ffe9;text-shadow:0 0 20px #68ffc06e}.wheel-console{bottom:90px}.realm-stages{bottom:115px}.hero-bottom{bottom:95px}.developer-credit{display:flex;flex-direction:column;gap:6px;text-align:right}.developer-credit>span{font-size:6px;letter-spacing:2px;color:#a8b89d}.developer-credit>strong{font:22px 'Cormorant Garamond',Georgia;font-weight:400;color:#f1ca8e}.developer-credit>small{font-size:7px;color:#b7ac95}footer{padding-bottom:110px}.motion-dock{bottom:24px;right:22px}.tour-running .journey-dock{border-color:#83e4bb88}.tour-running #room-menu-toggle small{color:#84e6c0}.camera-in-flight #gold-rain{z-index:85}@keyframes flightVeil{0%{opacity:0}20%{opacity:1}68%{opacity:1}100%{opacity:0}}@keyframes archPassage{0%{transform:translateZ(-1100px) rotateZ(-5deg);opacity:0}25%{opacity:1}75%{opacity:.9}100%{transform:translateZ(900px) rotateZ(7deg);opacity:0}}@keyframes portalLens{40%{opacity:1;transform:scale(1)}60%{opacity:.6;transform:scale(1.6)}100%{opacity:0;transform:scale(2)}}@keyframes passageCaption{0%,8%{opacity:0;transform:translateY(25px) scale(.9)}30%,65%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-20px) scale(1.1)}}@keyframes roomDepart{to{opacity:.15;transform:perspective(1200px) translateZ(180px) rotateY(var(--flight-angle,24deg)) scale(1.25);filter:blur(3px)}}@keyframes roomArrive{from{opacity:.25;transform:perspective(1200px) translateZ(-350px) rotateY(var(--arrival-angle,-18deg)) rotateX(7deg) scale(.86);filter:blur(2px)}to{opacity:1;transform:perspective(1200px) translateZ(0) rotateY(0) rotateX(0) scale(1);filter:blur(0)}}@media(max-width:800px){.journey-dock{bottom:12px;max-width:calc(100vw - 24px);width:370px;justify-content:space-between;padding:5px 6px}.journey-dock>button{padding:4px 9px;gap:8px;height:41px}#room-menu-toggle{min-width:0;flex:1}.compass-icon{width:29px;height:29px;font-size:21px;flex-shrink:0}#room-menu-toggle small{font-size:4px;letter-spacing:1px}#room-menu-toggle b{font-size:9px}#room-menu-toggle i{display:none}#journey-next{font-size:5px;gap:5px}#journey-next b{font-size:18px}#dust-shower{font-size:21px}#tour-control{font-size:17px}.motion-dock{right:15px;bottom:82px}.motion-dock button{font-size:7px;padding:9px 12px}.wheel-console{bottom:91px}.realm-stages{bottom:125px}.genesis-copy{bottom:31%}.genesis.awakened .genesis-copy{bottom:31%}.genesis-copy h1{font-size:43px}.genesis-links{gap:12px}.cinema-launch{font-size:8px}.genesis .portal-enter{font-size:8px}.flight-caption>strong{font-size:36px}.flight-caption>span{font-size:6px;letter-spacing:2px}.flight-arch{width:300px;height:470px;left:calc(50% - 150px);top:calc(50% - 235px)}.developer-credit{text-align:left;flex-basis:100%;margin-top:12px}.developer-credit>strong{font-size:23px}footer{padding-bottom:110px}.hero-bottom{bottom:85px}#room-menu{left:0;right:0}.genesis .realm-stages{font-size:5px}}@media(prefers-reduced-motion:reduce){#gold-rain,#camera-flight{display:none!important}.room-arrival,.room-departure{animation:none!important;transform:none!important;opacity:1!important}.compass-icon{animation:none!important}}
+
+/* PALMA BIOMETRIC SECTION STYLES */
+
+.biometric {
+    position: relative;
+    overflow: hidden;
+}
+
+.biometric .section-top {
+    position: relative;
+    z-index: 1;
+}
+
+.biometric-content {
+    position: relative;
+    max-width: 900px;
+    margin: 40px auto 0;
+    padding: clamp(28px, 5vw, 64px);
+    border: 1px solid rgba(175, 145, 100, 0.3);
+    border-radius: 24px;
+    background: linear-gradient(
+        135deg,
+        rgba(175, 145, 100, 0.10),
+        rgba(175, 145, 100, 0.025)
+    );
+    box-shadow: 0 18px 55px rgba(0, 0, 0, 0.07);
+    text-align: center;
+}
+
+.biometric-content h3 {
+    margin: 18px 0;
+    font-size: clamp(26px, 4vw, 44px);
+    line-height: 1.2;
+    color: inherit;
+}
+
+.biometric-content p {
+    max-width: 650px;
+    margin: 16px auto;
+    line-height: 1.8;
+}
+
+.biometric-content .eyebrow {
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+@media (max-width: 768px) {
+    .biometric-content {
+        margin-top: 24px;
+        padding: 28px 20px;
+        border-radius: 16px;
+    }
+
+    .biometric-content h3 {
+        font-size: 28px;
+    }
+}
+
+
+/* PALMA BIOMETRIC TOOLS */
+
+.biometric-tools {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+    margin-top: 40px;
+    text-align: left;
+}
+
+.biometric-tool-card {
+    padding: 30px;
+    border: 1px solid rgba(200, 165, 105, 0.28);
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.035);
+}
+
+.biometric-tool-number {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: #c8a66c;
+}
+
+.biometric-tool-card h3 {
+    font-size: clamp(24px, 3vw, 34px);
+    margin: 18px 0;
+}
+
+.biometric-tool-card p {
+    text-align: left;
+    margin: 12px 0 22px;
+}
+
+.biometric-tool-card label {
+    display: block;
+    margin: 18px 0 8px;
+    font-size: 13px;
+}
+
+.biometric-tool-card input[type="text"],
+.biometric-tool-card input[type="file"] {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 13px;
+    border: 1px solid rgba(200, 165, 105, 0.3);
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    color: inherit;
+    font: inherit;
+}
+
+.biometric-tool-card .biometric-consent {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.biometric-tool-card button {
+    width: 100%;
+    margin-top: 22px;
+    padding: 15px;
+    border: 1px solid rgba(200, 165, 105, 0.35);
+    border-radius: 10px;
+    background: #bda074;
+    color: #111;
+    font: inherit;
+}
+
+.biometric-tool-card button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.biometric-tool-card .biometric-note {
+    font-size: 12px;
+    opacity: 0.7;
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .biometric-tools {
+        grid-template-columns: 1fr;
+    }
+
+    .biometric-tool-card {
+        padding: 22px;
+    }
+}
+
+
+/* PALMA BIOMETRIC NAVIGATION FIX */
+
+.journey-dock {
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+body.biometric-in-view .journey-dock {
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, calc(100% + 36px));
+}
+
+
+/* PALMA ROOM 09 NAVIGATION FIX */
+
+body.biometric-in-view .journey-dock {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(-50%);
+}
+
+#biometric {
+    padding-bottom: 145px;
+    scroll-margin-top: 64px;
+}
+
+
+/* PALMA BIOMETRIC ADMIN LOGIN */
+
+.biometric-admin-panel {
+    margin: 30px 0;
+    padding: 28px;
+    border: 1px solid rgba(200, 165, 105, 0.35);
+    border-radius: 18px;
+    background: rgba(0, 0, 0, 0.22);
+}
+
+.biometric-admin-panel [hidden] {
+    display: none !important;
+}
+
+.biometric-admin-panel[hidden] {
+    display: none !important;
+}
+
+.biometric-admin-heading h3 {
+    margin: 12px 0;
+    font-size: clamp(23px, 3vw, 32px);
+}
+
+.biometric-admin-panel form {
+    max-width: 450px;
+    margin-top: 22px;
+}
+
+.biometric-admin-panel label {
+    display: block;
+    margin-bottom: 9px;
+    font-size: 13px;
+}
+
+.biometric-admin-panel input {
+    box-sizing: border-box;
+    display: block;
+    width: 100%;
+    padding: 14px;
+    border: 1px solid rgba(200, 165, 105, 0.4);
+    border-radius: 9px;
+    background: rgba(0, 0, 0, 0.25);
+    color: inherit;
+    font: inherit;
+}
+
+.biometric-admin-panel button {
+    margin-top: 17px;
+    padding: 13px 24px;
+    border: 1px solid #c8a66c;
+    border-radius: 9px;
+    background: #c8a66c;
+    color: #151515;
+    font: inherit;
+    cursor: pointer;
+}
+
+.biometric-admin-panel button:disabled {
+    opacity: 0.55;
+    cursor: wait;
+}
+
+#bio-admin-status {
+    margin-top: 16px;
+    font-size: 13px;
+}
+
+
+/* PALMA BIOMETRIC HAND SELECTOR */
+
+.biometric-tool-card select {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 13px;
+    border: 1px solid rgba(200, 165, 105, 0.3);
+    border-radius: 10px;
+    background: #171b1a;
+    color: #f0e5d3;
+    font: inherit;
+    color-scheme: dark;
+}
+
+.biometric-tool-card select:disabled {
+    opacity: 0.55;
+}
+
+/* ICA02: processing gallery and local audit history */
+.biometric-stage-section { margin-top: 24px; }
+.biometric-stage-section h4 { font-size: 18px; margin-bottom: 8px; }
+.biometric-stage-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+.biometric-stage-grid figure { margin: 0; border: 1px solid rgba(200,165,105,.3); border-radius: 12px; overflow: hidden; background: rgba(0,0,0,.16); }
+.biometric-stage-grid img { display: block; width: 100%; height: 150px; object-fit: contain; background: rgba(0,0,0,.25); }
+.biometric-stage-grid figcaption { padding: 8px; font-size: 11px; line-height: 1.4; }
+.biometric-table-wrap { max-width: 100%; overflow-x: auto; }
+.biometric-history-table { border-collapse: collapse; width: 100%; font-size: 11px; text-align: left; }
+.biometric-history-table th, .biometric-history-table td { padding: 10px 8px; border-bottom: 1px solid rgba(200,165,105,.2); white-space: nowrap; }
+.biometric-history-table th { color: #d6b98b; font-weight: 600; }
+@media (max-width: 600px) { .biometric-stage-grid { grid-template-columns: 1fr; } }

@@ -8,3 +8,32 @@ __pycache__/
 uploads/
 captures/
 *.log
+# PALMA private biometric data
+/biometric_data.sqlite3
+/.env
+/biometric_secret.key
+
+# PALMA SECURITY RULES
+/.env.*
+!/.env.example
+/biometric_data.sqlite3-*
+*.sqlite3
+*.sqlite3-*
+*.db
+/participants/
+/.venv/
+*.bak
+
+# PALMA PRIVATE TEST FILES
+*.backup
+.gitignore.security-backup
+palm_*.png
+palm_*.jpg
+palm_*.jpeg
+palm_*.webp
+
+# Local biometric diagnostic scripts
+/batch_enroll.py
+/check_pa_edges.py
+/check_pa_edges_5.py
+/verification_dev.py

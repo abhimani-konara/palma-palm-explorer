@@ -8,10 +8,17 @@ from flask import Flask, jsonify, render_template, request, send_from_directory
 from dotenv import load_dotenv
 from vision import analyze
 from llm import build_report, answer, provider_name
+from gemini_photo import analyze_palm_photos
 from fun_reading import build_fun_reading
 
 load_dotenv()
 app=Flask(__name__, static_folder='dist', static_url_path='')
+from biometric_api import biometric_bp
+app.register_blueprint(biometric_bp)
+from admin_auth import admin_bp
+app.register_blueprint(admin_bp)
+from biometric_enrollment_api import enrollment_bp
+app.register_blueprint(enrollment_bp)
 app.config['MAX_CONTENT_LENGTH']=int(os.getenv('MAX_UPLOAD_MB','8'))*1024*1024*2
 app.config['SECRET_KEY']=os.getenv('SECRET_KEY') or secrets.token_hex(24)
 app.json.ensure_ascii=False
@@ -40,6 +47,8 @@ def analyze_route():
         if 'left' not in request.files or 'right' not in request.files:
             return jsonify(error='Please upload separate photographs of your LEFT and RIGHT palms.'),400
         results={}
+        photo_consent = request.form.get('gemini_photo_consent') == 'yes'
+        photo_bytes = {}
         for side in ('left','right'):
             file=request.files[side]
             if not file.filename:return jsonify(error=f'Please select a {side} palm image.'),400
@@ -47,12 +56,33 @@ def analyze_route():
                 return jsonify(error=f'{side.title()} palm: use .jpg, .jpeg or .png files.'),400
             data=file.read(8*1024*1024+1)
             if len(data)>8*1024*1024:return jsonify(error=f'{side.title()} palm image exceeds the 8MB per-file limit.'),413
+            if photo_consent:
+                photo_bytes[side] = data
             results[side]=analyze(data,side)
             q=results[side]['quality']
             if q['sharpness_laplacian']<5 or q['brightness']<15 or q['brightness']>246:
                 return jsonify(error=f'{side.title()} image quality is unsuitable. Re-take the picture sharply in even light and upload again.',
                     detail=q['warnings']),422
         report=build_report(results)
+
+        if photo_consent:
+            try:
+                photo_reading = analyze_palm_photos(
+                    photo_bytes['left'],
+                    photo_bytes['right'],
+                    consent=True
+                )
+                report['photo_interpretation'] = photo_reading
+                report['photo_interpretation_status'] = 'completed'
+            except Exception:
+                app.logger.warning(
+                    'Optional Gemini photo analysis unavailable'
+                )
+                report['photo_interpretation_status'] = 'unavailable'
+            finally:
+                photo_bytes.clear()
+        else:
+            report['photo_interpretation_status'] = 'not_requested'
         scan_id=secrets.token_urlsafe(20)
         # Only compact feature records are cached. The image content is NOT retained server-side.
         records={s:{k:v for k,v in r.items() if k!='images'} for s,r in results.items()}
@@ -112,6 +142,12 @@ def headers(resp):
     resp.headers['Referrer-Policy']='no-referrer'
     return resp
 
+# Local biometric admin session settings; configure before serving requests.
+from datetime import timedelta
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(minutes=20)
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Strict"
+app.config["SESSION_COOKIE_SECURE"] = False  # localhost HTTP; use True for HTTPS deployment
+
 if __name__=='__main__':
     app.run(host='127.0.0.1',port=int(os.getenv('PORT','5000')),debug=False)
-

@@ -1,0 +1,715 @@
+
+(function () {
+    const localHosts = ["127.0.0.1", "localhost", "[::1]"];
+
+    if (!localHosts.includes(window.location.hostname)) {
+        return;
+    }
+
+    const panel = document.getElementById("bio-admin-panel");
+    const form = document.getElementById("bio-admin-form");
+    const passwordInput = document.getElementById("bio-admin-password");
+    const loginButton = document.getElementById("bio-admin-login-button");
+    const logoutButton = document.getElementById("bio-admin-logout");
+    const status = document.getElementById("bio-admin-status");
+
+    if (!panel || !form || !status) {
+        return;
+    }
+
+
+    // PALMA PALM VERIFICATION UI
+    const verifyId = document.getElementById("bio-verify-id");
+    const verifyImage = document.getElementById("bio-verify-image");
+    const verifyCard = verifyId.closest(".biometric-tool-card");
+    const verifyButton = verifyCard.querySelector("button");
+    const oldNote = verifyCard.querySelector(".biometric-note");
+
+    const verifyStatus = document.createElement("p");
+    verifyStatus.setAttribute("role", "status");
+    verifyStatus.setAttribute("aria-live", "polite");
+    verifyStatus.className = "biometric-note";
+    verifyButton.insertAdjacentElement("afterend", verifyStatus);
+
+    // Real intermediate stages from the local Flask biometric pipeline.
+    const stageContainer = document.createElement("section");
+    stageContainer.id = "bio-processing-stages";
+    stageContainer.className = "biometric-stage-section";
+    stageContainer.hidden = true;
+    stageContainer.setAttribute("aria-label", "Biometric processing stages");
+    const stageHeading = document.createElement("h4");
+    stageHeading.textContent = "Real image-processing stages";
+    const stageDescription = document.createElement("p");
+    stageDescription.className = "biometric-note";
+    stageDescription.textContent =
+        "Generated locally for this verification. Previews are not saved to the server.";
+    const stageGrid = document.createElement("div");
+    stageGrid.className = "biometric-stage-grid";
+    stageContainer.append(stageHeading, stageDescription, stageGrid);
+    verifyStatus.insertAdjacentElement("afterend", stageContainer);
+
+    function clearStages() {
+        stageGrid.replaceChildren();
+        stageContainer.hidden = true;
+    }
+
+    function renderStages(stages) {
+        clearStages();
+        if (!Array.isArray(stages) || stages.length === 0) {
+            return;
+        }
+        for (const stage of stages) {
+            if (!stage || typeof stage.title !== "string" ||
+                typeof stage.data_url !== "string" ||
+                !stage.data_url.startsWith("data:image/png;base64,")) {
+                continue;
+            }
+            const figure = document.createElement("figure");
+            const img = document.createElement("img");
+            img.loading = "lazy";
+            img.alt = stage.title;
+            img.src = stage.data_url;
+            const caption = document.createElement("figcaption");
+            caption.textContent = stage.title;
+            figure.append(img, caption);
+            stageGrid.append(figure);
+        }
+        stageContainer.hidden = stageGrid.childElementCount === 0;
+    }
+
+    if (oldNote) {
+        oldNote.textContent = "Authorized local testing only.";
+    }
+
+    let adminAuthenticated = false;
+
+    // PALMA SECURE ENROLLMENT SUBMISSION
+
+    const enrollId = document.getElementById("bio-enroll-id");
+    const enrollImages = document.getElementById("bio-enroll-images");
+    const enrollHand = document.getElementById("bio-enroll-hand-side");
+    const enrollConsent = document.querySelector(
+        ".biometric-consent input[type='checkbox']"
+    );
+
+    const enrollCard = enrollId.closest(".biometric-tool-card");
+    const enrollButton = enrollCard.querySelector("button");
+    const enrollNote = enrollCard.querySelector(".biometric-note");
+
+    const enrollStatus = document.createElement("p");
+    enrollStatus.className = "biometric-note";
+    enrollStatus.setAttribute("role", "status");
+    enrollStatus.setAttribute("aria-live", "polite");
+
+    enrollButton.insertAdjacentElement("afterend", enrollStatus);
+
+    if (enrollNote) {
+        enrollNote.textContent =
+            "Authorized local enrollment with participant consent.";
+    }
+
+    let enrollmentBusy = false;
+
+    function enrollmentFormValid() {
+        const id = enrollId.value.trim();
+        const hand = enrollHand.value;
+        const files = Array.from(enrollImages.files || []);
+
+        return (
+            /^[A-Za-z0-9_-]{1,40}$/.test(id) &&
+            ["left", "right"].includes(hand) &&
+            files.length === 3 &&
+            files.every(file =>
+                file.size > 0 &&
+                file.size <= 5 * 1024 * 1024 &&
+                ["image/jpeg", "image/png"].includes(file.type)
+            ) &&
+            enrollConsent.checked
+        );
+    }
+
+    function updateEnrollmentButton() {
+        enrollButton.disabled = (
+            !adminAuthenticated ||
+            enrollmentBusy ||
+            !enrollmentFormValid()
+        );
+    }
+
+    enrollId.addEventListener("input", updateEnrollmentButton);
+    enrollHand.addEventListener("change", updateEnrollmentButton);
+    enrollImages.addEventListener("change", updateEnrollmentButton);
+    enrollConsent.addEventListener("change", updateEnrollmentButton);
+
+    enrollButton.addEventListener("click", async function () {
+        if (
+            !adminAuthenticated ||
+            !csrfToken ||
+            !enrollmentFormValid() ||
+            enrollmentBusy
+        ) {
+            enrollStatus.textContent =
+                "Complete the form and sign in as admin.";
+            return;
+        }
+
+        const confirmed = window.confirm(
+            "Confirm that the participant has provided informed " +
+            "consent to store encrypted biometric templates. Continue?"
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
+        const formData = new FormData();
+
+        formData.append("user_id", enrollId.value.trim());
+        formData.append("hand_side", enrollHand.value);
+        formData.append("consent", "true");
+
+        for (const file of enrollImages.files) {
+            formData.append("images", file);
+        }
+
+        enrollmentBusy = true;
+        updateEnrollmentButton();
+
+        enrollStatus.textContent =
+            "Processing three palm images. Please do not close this page.";
+
+        try {
+            const response = await fetch(
+                "/api/biometric/enroll",
+                {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: {
+                        "X-CSRF-Token": csrfToken
+                    },
+                    body: formData
+                }
+            );
+
+            const data = await response.json().catch(
+                () => ({ error: "Unexpected server response" })
+            );
+
+            if (!response.ok) {
+                enrollStatus.textContent =
+                    data.detail || data.error ||
+                    "Enrollment could not be completed.";
+                return;
+            }
+
+            enrollStatus.textContent =
+                "Enrollment Successful! Participant: " +
+                data.user_id +
+                " | Templates saved: " +
+                data.template_count;
+
+            enrollId.value = "";
+            enrollHand.value = "";
+            enrollImages.value = "";
+            enrollConsent.checked = false;
+
+        } catch (error) {
+            enrollStatus.textContent =
+                "Could not connect to the enrollment service.";
+        } finally {
+            enrollmentBusy = false;
+            updateEnrollmentButton();
+        }
+    });
+
+    updateEnrollmentButton();
+
+
+
+    let csrfToken = "";
+    panel.hidden = false;
+
+    function showAuthenticated(authenticated) {
+        form.hidden = authenticated;
+        logoutButton.hidden = !authenticated;
+
+        adminAuthenticated = authenticated;
+        updateEnrollmentButton();
+        updateDeleteAccess();
+        updateHistoryAccess();
+        if (!authenticated) {
+            clearStages();
+            clearHistory();
+        }
+
+        // PALMA ENROLLMENT INPUT FIX
+        const enrollId = document.getElementById("bio-enroll-id");
+        const enrollImages = document.getElementById("bio-enroll-images");
+        const enrollConsent = document.querySelector(
+            ".biometric-consent input[type='checkbox']"
+        );
+
+        if (enrollId) {
+            enrollId.disabled = !authenticated;
+        }
+
+        const enrollHandSide = document.getElementById(
+            "bio-enroll-hand-side"
+        );
+
+        if (enrollHandSide) {
+            enrollHandSide.disabled = !authenticated;
+        }
+
+        if (enrollImages) {
+            enrollImages.disabled = !authenticated;
+        }
+
+        if (enrollConsent) {
+            enrollConsent.disabled = !authenticated;
+        }
+
+        verifyId.disabled = !authenticated;
+        verifyImage.disabled = !authenticated;
+        verifyButton.disabled = !authenticated;
+
+        verifyStatus.textContent = authenticated
+            ? "Ready to verify a palm image."
+            : "Sign in as admin to enable verification.";
+
+
+        status.textContent = authenticated
+            ? "Admin authenticated. Secure testing access is active."
+            : "Please sign in to access biometric testing.";
+    }
+
+    async function loadSession() {
+        const response = await fetch(
+            "/api/biometric/admin/session",
+            {
+                credentials: "same-origin",
+                cache: "no-store"
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error("Session check failed");
+        }
+
+        const data = await response.json();
+        csrfToken = data.csrf_token || "";
+        showAuthenticated(data.authenticated === true);
+    }
+
+    form.addEventListener("submit", async function (event) {
+        event.preventDefault();
+
+        if (!csrfToken) {
+            status.textContent = "Session unavailable. Refresh the page.";
+            return;
+        }
+
+        loginButton.disabled = true;
+        status.textContent = "Checking credentials...";
+
+        const password = passwordInput.value;
+
+        try {
+            const response = await fetch(
+                "/api/biometric/admin/login",
+                {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-Token": csrfToken
+                    },
+                    body: JSON.stringify({ password: password })
+                }
+            );
+
+            const data = await response.json();
+            passwordInput.value = "";
+
+            if (!response.ok) {
+                status.textContent = data.error || "Login failed.";
+                return;
+            }
+
+            csrfToken = data.csrf_token || "";
+            showAuthenticated(true);
+            refreshHistory();
+
+        } catch (error) {
+            passwordInput.value = "";
+            status.textContent = "Could not connect to the server.";
+        } finally {
+            loginButton.disabled = false;
+        }
+    });
+
+    logoutButton.addEventListener("click", async function () {
+        logoutButton.disabled = true;
+
+        try {
+            const response = await fetch(
+                "/api/biometric/admin/logout",
+                {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: {
+                        "X-CSRF-Token": csrfToken
+                    }
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error("Logout failed");
+            }
+
+            csrfToken = "";
+            await loadSession();
+
+        } catch (error) {
+            status.textContent = "Could not sign out. Try again.";
+        } finally {
+            logoutButton.disabled = false;
+        }
+    });
+
+
+    verifyButton.addEventListener("click", async function () {
+        if (!adminAuthenticated || !csrfToken) {
+            verifyStatus.textContent = "Admin login required.";
+            return;
+        }
+
+        const userId = verifyId.value.trim();
+        const imageFile = verifyImage.files[0];
+
+        if (!/^[A-Za-z0-9_-]{1,40}$/.test(userId)) {
+            verifyStatus.textContent =
+                "Enter a valid participant ID.";
+            return;
+        }
+
+        if (!imageFile) {
+            verifyStatus.textContent =
+                "Please select one palm image.";
+            return;
+        }
+
+        if (
+            imageFile.size === 0 ||
+            imageFile.size > 8 * 1024 * 1024 ||
+            !["image/jpeg", "image/png"].includes(imageFile.type)
+        ) {
+            verifyStatus.textContent =
+                "Choose a JPG or PNG image under 8 MB.";
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("user_id", userId);
+        formData.append("image", imageFile);
+        formData.append("include_stages", "yes");
+        clearStages();
+
+        verifyButton.disabled = true;
+        verifyStatus.textContent = "Processing palm verification...";
+
+        try {
+            const response = await fetch(
+                "/api/biometric/verify",
+                {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: {
+                        "X-CSRF-Token": csrfToken
+                    },
+                    body: formData
+                }
+            );
+
+            const data = await response.json();
+            // Verification attempts, including invalid images, are auditable.
+            refreshHistory();
+
+            if (!response.ok) {
+                verifyStatus.textContent =
+                    data.status === "Invalid Image"
+                        ? "Invalid Image: " + (data.message || "Palm image rejected.")
+                        : (data.error || data.message || "Verification could not be completed.");
+                return;
+            }
+
+            let resultText = data.status || "Verification completed";
+
+            if (typeof data.score === "number") {
+                resultText +=
+                    " | Similarity: " + data.score.toFixed(4);
+            }
+
+            if (typeof data.threshold === "number") {
+                resultText += " | Threshold: " + data.threshold.toFixed(2);
+            }
+            if (typeof data.duration_ms === "number") {
+                resultText += " | Time: " + data.duration_ms.toFixed(1) + " ms";
+            }
+            verifyStatus.textContent = resultText;
+            renderStages(data.stages);
+            if (data.stage_message) {
+                verifyStatus.textContent += " | " + data.stage_message;
+            }
+
+        } catch (error) {
+            verifyStatus.textContent =
+                "Could not complete verification. Check the server.";
+        } finally {
+            verifyButton.disabled = !adminAuthenticated;
+        }
+    });
+
+
+    // PALMA PARTICIPANT DATA DELETION UI
+
+    const deleteCard = document.createElement("article");
+    deleteCard.className = "biometric-tool-card";
+    deleteCard.innerHTML = `
+        <h3>Delete Participant Data</h3>
+        <p class="biometric-note">
+            Authorized administrators only. Verify the participant's
+            withdrawal request before deleting biometric records.
+        </p>
+        <label for="bio-delete-id">Participant ID</label>
+        <input id="bio-delete-id" type="text"
+               maxlength="40" autocomplete="off">
+        <label for="bio-delete-confirm">Confirm Participant ID</label>
+        <input id="bio-delete-confirm" type="text"
+               maxlength="40" autocomplete="off">
+        <button id="bio-delete-button" type="button" disabled>
+            Delete Participant Data
+        </button>
+        <p id="bio-delete-status" class="biometric-note"
+           role="status" aria-live="polite"></p>
+    `;
+
+    verifyCard.insertAdjacentElement("afterend", deleteCard);
+
+    const deleteId = document.getElementById("bio-delete-id");
+    const deleteConfirm = document.getElementById("bio-delete-confirm");
+    const deleteButton = document.getElementById("bio-delete-button");
+    const deleteStatus = document.getElementById("bio-delete-status");
+
+    let deletionBusy = false;
+
+    function updateDeleteAccess() {
+        const id = deleteId.value.trim();
+        const confirmation = deleteConfirm.value.trim();
+
+        deleteCard.hidden = !adminAuthenticated;
+
+        deleteButton.disabled = (
+            !adminAuthenticated ||
+            !csrfToken ||
+            deletionBusy ||
+            !/^[A-Za-z0-9_-]{1,40}$/.test(id) ||
+            id !== confirmation
+        );
+
+        if (!adminAuthenticated) {
+            deleteId.value = "";
+            deleteConfirm.value = "";
+            deleteStatus.textContent = "";
+        }
+    }
+
+    deleteId.addEventListener("input", updateDeleteAccess);
+    deleteConfirm.addEventListener("input", updateDeleteAccess);
+
+    deleteButton.addEventListener("click", async function () {
+        updateDeleteAccess();
+
+        if (deleteButton.disabled) {
+            return;
+        }
+
+        const userId = deleteId.value.trim();
+
+        const confirmed = window.confirm(
+            "Permanently delete enrollment AND authentication history " +
+            "for participant " + userId + "? This cannot be undone."
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
+        deletionBusy = true;
+        updateDeleteAccess();
+        deleteStatus.textContent = "Deleting participant data...";
+
+        try {
+            const response = await fetch(
+                "/api/biometric/delete-enrollment",
+                {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-Token": csrfToken
+                    },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        confirm_user_id: userId
+                    })
+                }
+            );
+
+            const data = await response.json().catch(
+                () => ({ error: "Unexpected server response" })
+            );
+
+            if (!response.ok) {
+                deleteStatus.textContent =
+                    data.error || "Deletion failed.";
+                return;
+            }
+
+            deleteStatus.textContent =
+                "Participant " + userId +
+                ": enrollment and authentication history deleted.";
+
+            deleteId.value = "";
+            deleteConfirm.value = "";
+            refreshHistory();
+
+        } catch (error) {
+            deleteStatus.textContent =
+                "Could not connect to the deletion service.";
+        } finally {
+            deletionBusy = false;
+            updateDeleteAccess();
+        }
+    });
+
+    updateDeleteAccess();
+
+    // PALMA ADMIN AUDIT HISTORY - read-only, server-provided metadata.
+    const historyCard = document.createElement("article");
+    historyCard.className = "biometric-tool-card";
+    historyCard.id = "bio-history-card";
+    historyCard.hidden = true;
+    historyCard.innerHTML = `
+        <span class="biometric-tool-number">04 / AUDIT</span>
+        <h3>Authentication History</h3>
+        <p class="biometric-note">Latest 50 attempts. No palm photos or templates are stored in this log.</p>
+        <label for="bio-history-filter">Participant ID (optional)</label>
+        <input id="bio-history-filter" type="text" maxlength="40"
+               autocomplete="off" placeholder="All participants">
+        <button id="bio-history-refresh" type="button" disabled>Refresh History</button>
+        <p id="bio-history-status" class="biometric-note" role="status" aria-live="polite"></p>
+        <div class="biometric-table-wrap">
+            <table class="biometric-history-table">
+                <thead><tr>
+                    <th>Attempt</th><th>Participant</th><th>Timestamp (UTC)</th>
+                    <th>Similarity</th><th>Outcome</th><th>Time (ms)</th>
+                </tr></thead>
+                <tbody id="bio-history-rows"></tbody>
+            </table>
+        </div>
+    `;
+    deleteCard.insertAdjacentElement("afterend", historyCard);
+    const historyFilter = document.getElementById("bio-history-filter");
+    const historyRefresh = document.getElementById("bio-history-refresh");
+    const historyStatus = document.getElementById("bio-history-status");
+    const historyRows = document.getElementById("bio-history-rows");
+    let historyBusy = false;
+
+    function clearHistory() {
+        historyRows.replaceChildren();
+        historyStatus.textContent = "";
+        historyFilter.value = "";
+    }
+
+    function updateHistoryAccess() {
+        historyCard.hidden = !adminAuthenticated;
+        historyFilter.disabled = !adminAuthenticated || historyBusy;
+        historyRefresh.disabled = !adminAuthenticated || historyBusy;
+    }
+
+    async function refreshHistory() {
+        if (!adminAuthenticated) {
+            return;
+        }
+        const userId = historyFilter.value.trim();
+        if (userId && !/^[A-Za-z0-9_-]{1,40}$/.test(userId)) {
+            historyStatus.textContent = "Enter a valid participant ID.";
+            return;
+        }
+        historyBusy = true;
+        updateHistoryAccess();
+        historyStatus.textContent = "Loading recent authentication attempts...";
+        try {
+            const url = userId
+                ? "/api/biometric/history?user_id=" + encodeURIComponent(userId)
+                : "/api/biometric/history";
+            const response = await fetch(url, {
+                credentials: "same-origin", cache: "no-store"
+            });
+            const data = await response.json();
+            if (!adminAuthenticated) {
+                return; // A logout may happen while a history request is in flight.
+            }
+            if (!response.ok || !Array.isArray(data.records)) {
+                throw new Error(data.error || "History unavailable");
+            }
+            historyRows.replaceChildren();
+            for (const record of data.records) {
+                const row = document.createElement("tr");
+                const fields = [
+                    record.attempt_id,
+                    record.user_id,
+                    record.timestamp,
+                    typeof record.score === "number" ? record.score.toFixed(4) : "-",
+                    record.outcome,
+                    typeof record.duration_ms === "number" ? record.duration_ms.toFixed(2) : "-"
+                ];
+                for (const field of fields) {
+                    const cell = document.createElement("td");
+                    cell.textContent = field == null ? "-" : String(field);
+                    row.append(cell);
+                }
+                historyRows.append(row);
+            }
+            historyStatus.textContent = data.records.length
+                ? "Showing " + data.records.length + " recent attempt(s)."
+                : "No authentication attempts recorded yet.";
+        } catch (error) {
+            historyRows.replaceChildren();
+            historyStatus.textContent = "Cannot load history. Check the server and admin login.";
+        } finally {
+            historyBusy = false;
+            updateHistoryAccess();
+        }
+    }
+
+    historyRefresh.addEventListener("click", refreshHistory);
+    historyFilter.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            refreshHistory();
+        }
+    });
+    updateHistoryAccess();
+
+    loadSession().then(function () {
+        if (adminAuthenticated) {
+            refreshHistory();
+        }
+    }).catch(function () {
+        status.textContent =
+            "Admin service unavailable. Restart the Flask server.";
+        form.hidden = true;
+    });
+})();
